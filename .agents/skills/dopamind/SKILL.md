@@ -51,6 +51,12 @@ Users' profiles must reside inside Supabase PostgreSQL `public.profiles`:
 * **Attributes:** `id` (references auth.users), `streak_count`, `last_played_at`, `plant_stage`, `is_premium`.
 * **Authentication triggers:** Trigger `on_auth_user_created` executes `handle_new_user()` on `auth.users` row creation to seed the database profile row.
 
+### 🎮 Per-Game Schema Database Rule
+To ensure optimal schema isolation, the core `profiles` table only manages global authentication and streak metrics. Every sub-game under the DopaMind platform MUST manage its own statistics and play history logs inside its own isolated database table (e.g. `speedmatch_history` for SpeedMatch), referencing `auth.users(id)` as a foreign key:
+* **SpeedMatch History Schema (`speedmatch_history`):**
+  - Attributes: `id` (primary key), `user_id` (foreign key to auth.users), `created_at`, `score`, `attempts`, `accuracy_percent`, `avg_speed_seconds`.
+* **Security Rule:** Enable Row Level Security (RLS) for all game history tables. Only allow users to select/insert records that match their own `auth.uid()`.
+
 ---
 
 ## 📦 Vercel Monorepo Settings

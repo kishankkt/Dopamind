@@ -39,3 +39,24 @@ $$ language plpgsql security definer;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- 5. Create speedmatch_history table for game metrics tracking
+create table if not exists public.speedmatch_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  score integer not null,
+  attempts integer not null,
+  accuracy_percent integer not null,
+  avg_speed_seconds numeric(4,2) not null
+);
+
+-- Enable RLS for history
+alter table public.speedmatch_history enable row level security;
+
+-- Policies for history
+create policy "Users can insert their own game history." on public.speedmatch_history
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can view their own game history." on public.speedmatch_history
+  for select using (auth.uid() = user_id);
