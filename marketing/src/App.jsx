@@ -10,13 +10,21 @@ import NumberCascade from './games/NumberCascade';
 import SymbolMatch from './games/SymbolMatch';
 import DirectionDash from './games/DirectionDash';
 import TimeEstimator from './games/TimeEstimator';
+import GravitySort from './games/GravitySort';
+import EchoMap from './games/EchoMap';
+import PhaseLock from './games/PhaseLock';
+import ChromaShift from './games/ChromaShift';
+import WeightGuess from './games/WeightGuess';
 import { logGameSession } from './utils/gameEngine';
-import { LayoutDashboard, Gamepad2, Settings, LogOut, Sun, Moon, Zap, Grid, Hash, Palette, Search, MousePointerClick, ListOrdered, Copy, Move, Clock, Flame, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, Gamepad2, Settings, LogOut, Sun, Moon, Zap, Grid, Hash, Palette, Search, MousePointerClick, ListOrdered, Copy, Move, Clock, Flame, BrainCircuit, Leaf, ArrowDownUp, Undo2, Target, Pipette, Scale } from 'lucide-react';
 import { SeedIcon, SproutIcon, HerbIcon, SageIcon, FlowerIcon } from './components/PlantIcons';
 import PerformanceChart from './components/PerformanceChart';
 import Leaderboard from './components/Leaderboard';
 import InteractiveLeaf from './components/InteractiveLeaf';
 import ScheduleBuilder from './components/ScheduleBuilder';
+import DashboardView from './views/DashboardView';
+import BrainGymView from './views/BrainGymView';
+import SettingsView from './views/SettingsView';
 import './App.css';
 
 // 🧮 Frequencies for the Ascending Pentatonic Scale
@@ -72,8 +80,14 @@ export default function App() {
   const [isFirstCard, setIsFirstCard] = useState(true);
 
   // 🕹️ SpeedMatch Active Game States
-  const [gameState, setGameState] = useState("inactive"); // 'inactive' | 'playing' | 'summary'
+  const [gameState, setGameState] = useState("inactive"); // 'inactive' | 'playing' | 'summary' | 'interstitial'
   const [activeGameId, setActiveGameId] = useState("speedmatch");
+  
+  // 🤖 Orchestration Engine State
+  const [workoutQueue, setWorkoutQueue] = useState([]);
+  const [workoutCurrentIndex, setWorkoutCurrentIndex] = useState(0);
+  const [isOrchestrating, setIsOrchestrating] = useState(false);
+
   const [summaryStats, setSummaryStats] = useState(null);
   const [currentShape, setCurrentShape] = useState("");
   const [previousShape, setPreviousShape] = useState("");
@@ -288,6 +302,29 @@ export default function App() {
       startSpeedMatch();
     } else {
       setGameState("playing");
+    }
+  };
+
+  const advanceOrchestration = () => {
+    if (workoutCurrentIndex + 1 < workoutQueue.length) {
+      const nextIndex = workoutCurrentIndex + 1;
+      setWorkoutCurrentIndex(nextIndex);
+      startGame(workoutQueue[nextIndex].game.toLowerCase());
+    } else {
+      setIsOrchestrating(false);
+      showToast("AI Workout Complete! Neural pathways upgraded.");
+      setGameState("inactive");
+      setActiveTab("dashboard");
+    }
+  };
+
+  const handleStartOrchestration = (queue) => {
+    if (queue && queue.length > 0) {
+      setWorkoutQueue(queue);
+      setWorkoutCurrentIndex(0);
+      setIsOrchestrating(true);
+      setActiveTab("games");
+      startGame(queue[0].game.toLowerCase());
     }
   };
 
@@ -546,6 +583,41 @@ export default function App() {
       focus: 'Temporal Perception',
       description: 'Hold and release precisely on time. Calibrates your internal biological clock.',
       icon: <Clock size={28} />
+    },
+    {
+      id: 'gravitysort',
+      name: '11. GravitySort',
+      focus: 'Executive Prioritization',
+      description: 'Numbered orbs fall at different speeds. Tap them in ascending order before any hits the floor. Higher numbers fall faster.',
+      icon: <ArrowDownUp size={28} />
+    },
+    {
+      id: 'echomap',
+      name: '12. EchoMap',
+      focus: 'Reverse Working Memory',
+      description: 'Memorize a chain of tile pulses, then replay them in REVERSE. Every 5 levels the grid rotates 90°.',
+      icon: <Undo2 size={28} />
+    },
+    {
+      id: 'phaselock',
+      name: '13. PhaseLock',
+      focus: 'Temporal Synchronization',
+      description: 'Rotating rings with gates. Tap LOCK only when all gates align. A third ring appears at level 4.',
+      icon: <Target size={28} />
+    },
+    {
+      id: 'chromashift',
+      name: '14. ChromaShift',
+      focus: 'Visual Color Memory',
+      description: 'A color flashes briefly. Reproduce it from memory using a slider. Gradients become more subtle each level.',
+      icon: <Pipette size={28} />
+    },
+    {
+      id: 'weightguess',
+      name: '15. WeightGuess',
+      focus: 'Cognitive Conflict Resolution',
+      description: 'Shapes have hidden weights. Numbers inside are decoys. Pick the heavier side while ignoring misleading numbers.',
+      icon: <Scale size={28} />
     }
   ];
 
@@ -671,70 +743,11 @@ export default function App() {
         {/* 💻 Main Content Panel */}
         <main className="content-panel">
           {activeTab === "dashboard" && gameState === "inactive" && (
-            <>
-              <header className="tab-header">
-                <h1>Welcome Back, Focus Gymnast</h1>
-                <p>Build your cognitive attention span using zero-bloat game exercises.</p>
-              </header>
-
-              <div className="dashboard-grid">
-                <div className="glass-panel streak-card">
-                  <h2>Daily Streak Progress</h2>
-                  <div className="streak-status-badge" style={{display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center'}}>
-                    <Flame size={18} style={{color: '#f97316'}} /> {streak} {streak === 1 ? "Day Streak" : "Days Streak"}
-                  </div>
-                  <p className="streak-details">
-                    {streak > 0 
-                      ? `Great job! Your plant is getting watered. Keep playing every day to make it bloom.`
-                      : "No streak active. Play a round in the focus gym to plant your first seed."}
-                  </p>
-                  <button className="btn-primary" onClick={() => { setActiveTab("games"); }}>
-                    Enter Gym
-                  </button>
-                </div>
-
-                <div className="glass-panel plant-visualizer-card">
-                  <h2>Streak Plant Stage</h2>
-                  <div className="plant-wrapper">
-                    <div className="plant-icon-main animate-wiggle" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                      {plant.icon}
-                    </div>
-                    <div className="plant-pot-base" style={{width: '50px', height: '30px', background: 'var(--color-emerald-deep)', borderRadius: '4px 4px 16px 16px', borderTop: '6px solid var(--color-emerald-base)', marginTop: '-10px', zIndex: 1}}></div>
-                  </div>
-                  <p className="plant-label">Current: <strong>{plant.label}</strong></p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '24px' }}>
-                <div style={{ flex: '2 1 500px', display: 'flex', flexDirection: 'column' }}>
-                  <PerformanceChart session={session} />
-                </div>
-                <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column' }}>
-                  <Leaderboard />
-                </div>
-              </div>
-            </>
+            <DashboardView streak={streak} plant={plant} setActiveTab={setActiveTab} session={session} />
           )}
 
           {activeTab === "games" && gameState === "inactive" && (
-            <>
-              <header className="tab-header">
-                <h1>Brain Gym</h1>
-                <p>Choose a cognitive loop to begin. Playing waters your streak plant.</p>
-              </header>
-              <div className="games-inner-grid">
-                {gamesList.map(game => (
-                  <div key={game.id} className="glass-panel play-game-card">
-                    <span className="game-icon">{game.icon}</span>
-                    <h2>{game.name}</h2>
-                    <p>{game.description}</p>
-                    <button className="btn-primary" onClick={() => startGame(game.id)}>
-                      Start {game.id === 'focusgrid' ? 'Game' : '45s'} Workout
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
+            <BrainGymView gamesList={gamesList} startGame={startGame} />
           )}
 
           {/* ⚡ Game Playing Mode */}
@@ -796,6 +809,11 @@ export default function App() {
           {gameState === "playing" && activeGameId === "symbolmatch" && <SymbolMatch onComplete={(s) => handleGameComplete("symbolmatch", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
           {gameState === "playing" && activeGameId === "directiondash" && <DirectionDash onComplete={(s) => handleGameComplete("directiondash", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
           {gameState === "playing" && activeGameId === "timeestimator" && <TimeEstimator onComplete={(s) => handleGameComplete("timeestimator", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "gravitysort" && <GravitySort onComplete={(s) => handleGameComplete("gravitysort", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "echomap" && <EchoMap onComplete={(s) => handleGameComplete("echomap", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "phaselock" && <PhaseLock onComplete={(s) => handleGameComplete("phaselock", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "chromashift" && <ChromaShift onComplete={(s) => handleGameComplete("chromashift", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "weightguess" && <WeightGuess onComplete={(s) => handleGameComplete("weightguess", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
 
           {/* 📊 Game Summary Mode */}
           {gameState === "summary" && summaryStats && (
@@ -817,52 +835,29 @@ export default function App() {
                 </div>
               </div>
               <div className="summary-actions">
-                <button className="btn-primary" onClick={() => { setGameState("inactive"); setActiveTab("dashboard"); }}>
-                  Return to Dashboard
-                </button>
-                <button className="btn-secondary" onClick={() => startGame(activeGameId)}>
-                  Start Another Session
-                </button>
+                {isOrchestrating ? (
+                  <button className="btn-primary animate-pulse" onClick={advanceOrchestration}>
+                    Next Workout in Sequence
+                  </button>
+                ) : (
+                  <>
+                    <button className="btn-primary" onClick={() => { setGameState("inactive"); setActiveTab("dashboard"); }}>
+                      Return to Dashboard
+                    </button>
+                    <button className="btn-secondary" onClick={() => startGame(activeGameId)}>
+                      Start Another Session
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
 
           {activeTab === "settings" && (
-            <>
-              <header className="tab-header">
-                <h1>Settings</h1>
-                <p>Manage your account configurations and profile connections.</p>
-              </header>
-              <div className="glass-panel settings-card" style={{ maxWidth: '600px' }}>
-                <h2>User Profile</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--color-emerald-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2.5rem', fontWeight: 'bold' }}>
-                      {session.user.email.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, opacity: 0.7 }}>Account Email</p>
-                      <strong style={{ fontSize: '1.2rem' }}>{session.user.email}</strong>
-                    </div>
-                  </div>
-                  
-                  <div style={{ marginTop: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Username</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input 
-                        type="text" 
-                        defaultValue={session.user.email.split('@')[0]} 
-                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: '1rem' }} 
-                      />
-                      <button className="btn-primary" onClick={() => showToast("Profile updated successfully!")}>Update Profile</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+            <SettingsView session={session} showToast={showToast} />
           )}
           {activeTab === "guidance" && (
-            <ScheduleBuilder onStartGame={(game) => { setActiveTab("games"); startGame(game); }} />
+            <ScheduleBuilder onStartGame={handleStartOrchestration} />
           )}
 
         </main>
@@ -905,17 +900,7 @@ export default function App() {
       {/* 🚀 Header */}
       <header className="site-header glass-panel">
         <div className="logo-area">
-          <svg className="logo-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" style={{ width: '36px', height: '36px' }}>
-            <path d="M50 12 C20 18 15 62 50 88 C85 62 80 18 50 12 Z" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M50 88 V28" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <path d="M50 78 C38 72 28 66 28 54 C28 42 38 42 50 42" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <path d="M50 62 C32 56 22 50 22 38 C22 26 32 26 50 32" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <path d="M50 40 C40 34 32 28 32 22 C32 16 40 16 50 19" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <path d="M50 78 C62 72 72 66 72 54 C72 42 62 42 50 42" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <path d="M50 62 C68 56 78 50 78 38 C78 26 68 26 50 32" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <path d="M50 40 C60 34 68 28 68 22 C68 16 60 16 50 19" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <circle cx="50" cy="12" r="3.5" fill="#EAB308" />
-          </svg>
+          <Leaf className="logo-icon-svg" size={36} color="var(--color-emerald-base)" strokeWidth={2.5} />
           <span className="logo-text">DopaMind</span>
         </div>
         <nav className="header-nav">

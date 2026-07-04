@@ -69,7 +69,7 @@ export async function generateLeafDialogue(context) {
  * @returns {array} - Array of game objects recommended to play.
  */
 export async function buildBrainSchedule(userAnswers) {
-  const gamesList = ["FocusGrid", "CountFlow", "WordWarp", "PatternPulse", "ReactionTap", "NumberCascade", "SymbolMatch", "DirectionDash", "TimeEstimator", "SpeedMatch"];
+  const gamesList = ["FocusGrid", "CountFlow", "WordWarp", "PatternPulse", "ReactionTap", "NumberCascade", "SymbolMatch", "DirectionDash", "TimeEstimator", "SpeedMatch", "GravitySort", "EchoMap", "PhaseLock", "ChromaShift", "WeightGuess"];
   
   const messages = [
     {
@@ -81,7 +81,7 @@ Output ONLY JSON, no markdown formatting or extra text.`
     },
     {
       role: "user",
-      content: `User Profile: Goal=${userAnswers.goal}, Time Available=${userAnswers.time}. Build their schedule.`
+      content: `User Profile: Name=${userAnswers.name || 'User'}, Energy Level=${userAnswers.energyLevel || 'Medium'}, Cognitive State=${userAnswers.cognitiveState || 'Normal'}, Goal=${userAnswers.goal}, Time Available=${userAnswers.time}. Build a deeply customized neuro-architect schedule.`
     }
   ];
 
