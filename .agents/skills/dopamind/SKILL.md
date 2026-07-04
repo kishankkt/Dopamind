@@ -59,6 +59,11 @@ To ensure optimal schema isolation, the core `profiles` table only manages globa
 
 ---
 
+## 💎 Premium UX & Design Guidelines
+* **No Default Popups:** Banned using `window.alert()` or `window.confirm()`. All warnings, success toasts, and exit confirmations MUST be rendered as custom glassmorphic modals that adapt to dark/light templates.
+
+---
+
 ## 📦 Vercel Monorepo Settings
 Vercel is linked to the repository root. Build pipeline is handled via:
 - Build Command: `cd marketing && npm run build`

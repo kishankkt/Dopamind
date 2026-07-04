@@ -35,6 +35,15 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
+  // Custom Toast, Confirm & Legal Dialog States
+  const [toastMessage, setToastMessage] = useState("");
+  const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
+  const [customConfirmTitle, setCustomConfirmTitle] = useState("");
+  const [customConfirmMessage, setCustomConfirmMessage] = useState("");
+  const [customConfirmAction, setCustomConfirmAction] = useState(null);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState("privacy"); // 'privacy' | 'terms'
+
   // 🕹️ SpeedMatch Active Game States
   const [gameState, setGameState] = useState("inactive"); // 'inactive' | 'playing' | 'summary'
   const [currentShape, setCurrentShape] = useState("");
@@ -55,6 +64,22 @@ export default function App() {
   const cardTimeRemainingRef = useRef(2.5);
   const latencyRecords = useRef([]);
   const cardStartTimestamp = useRef(0);
+
+  // Toast message trigger helper
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage("");
+    }, 3500);
+  };
+
+  // Custom Confirm trigger helper
+  const triggerConfirm = (title, message, action) => {
+    setCustomConfirmTitle(title);
+    setCustomConfirmMessage(message);
+    setCustomConfirmAction(() => action);
+    setCustomConfirmOpen(true);
+  };
 
   // Supabase Auth listener
   useEffect(() => {
@@ -109,6 +134,7 @@ export default function App() {
         });
         if (error) throw error;
         setAuthOpen(false);
+        showToast("Welcome back! Dashboard synchronized.");
       } else {
         const { error } = await supabase.auth.signUp({
           email: authEmail,
@@ -120,7 +146,7 @@ export default function App() {
           }
         });
         if (error) throw error;
-        alert("Registration successful! Check your email for confirmation (if required). You can now log in!");
+        showToast("Registration successful! Email confirmed.");
         setAuthMode("login");
       }
     } catch (err) {
@@ -145,11 +171,14 @@ export default function App() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setActiveTab("dashboard");
-    setGameState("inactive");
+  const handleLogout = () => {
+    triggerConfirm("Log Out?", "Are you sure you want to sign out of DopaMind?", async () => {
+      await supabase.auth.signOut();
+      setSession(null);
+      setActiveTab("dashboard");
+      setGameState("inactive");
+      showToast("Signed out successfully.");
+    });
   };
 
   // Web Audio Synth Engine
@@ -387,6 +416,7 @@ export default function App() {
             setStreak(newStreak);
             setLastPlayed(today);
             playAscendingArpeggio();
+            showToast("Focus Workout Logged! Streak plant watered. 🌱");
           }
         } catch (err) {
           console.warn("Failed to water plant:", err);
@@ -415,10 +445,6 @@ export default function App() {
     if (streak <= 6) return { emoji: "🌿", label: "Thriving Herb" };
     if (streak <= 29) return { emoji: "🪴", label: "Sage Shrub" };
     return { emoji: "🌸", label: "Gold Flower Bloom!" };
-  };
-
-  const toggleFaq = (index) => {
-    setActiveFaq(activeFaq === index ? null : index);
   };
 
   const gamesList = [
@@ -503,12 +529,12 @@ export default function App() {
                 className={`menu-item ${activeTab === "dashboard" || gameState === "playing" || gameState === "summary" ? "active" : ""}`}
                 onClick={() => {
                   if (gameState === "playing") {
-                    if (confirm("Quit game in progress?")) {
+                    triggerConfirm("Quit workout?", "Your active score and latency metrics for this round will be discarded.", () => {
                       clearInterval(cardTimerRef.current);
                       clearInterval(roundTimerRef.current);
                       setGameState("inactive");
                       setActiveTab("dashboard");
-                    }
+                    });
                   } else {
                     setGameState("inactive");
                     setActiveTab("dashboard");
@@ -520,8 +546,17 @@ export default function App() {
               <button 
                 className={`menu-item ${activeTab === "games" ? "active" : ""}`}
                 onClick={() => {
-                  setGameState("inactive");
-                  setActiveTab("games");
+                  if (gameState === "playing") {
+                    triggerConfirm("Quit workout?", "Your active score and latency metrics for this round will be discarded.", () => {
+                      clearInterval(cardTimerRef.current);
+                      clearInterval(roundTimerRef.current);
+                      setGameState("inactive");
+                      setActiveTab("games");
+                    });
+                  } else {
+                    setGameState("inactive");
+                    setActiveTab("games");
+                  }
                 }}
               >
                 <span>🕹️</span> Games Gym
@@ -529,8 +564,17 @@ export default function App() {
               <button 
                 className={`menu-item ${activeTab === "settings" ? "active" : ""}`}
                 onClick={() => {
-                  setGameState("inactive");
-                  setActiveTab("settings");
+                  if (gameState === "playing") {
+                    triggerConfirm("Quit workout?", "Your active score and latency metrics for this round will be discarded.", () => {
+                      clearInterval(cardTimerRef.current);
+                      clearInterval(roundTimerRef.current);
+                      setGameState("inactive");
+                      setActiveTab("settings");
+                    });
+                  } else {
+                    setGameState("inactive");
+                    setActiveTab("settings");
+                  }
                 }}
               >
                 <span>⚙️</span> Settings
@@ -682,6 +726,30 @@ export default function App() {
             </>
           )}
         </main>
+
+        {/* 🔔 Toast Notification Banner */}
+        {toastMessage && (
+          <div className="toast-notification-banner animate-pop">
+            🌿 {toastMessage}
+          </div>
+        )}
+
+        {/* ⚠️ Custom Confirmation Modal Overlay */}
+        {customConfirmOpen && (
+          <div className="custom-confirm-overlay" onClick={() => setCustomConfirmOpen(false)}>
+            <div className="custom-confirm-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+              <h3>{customConfirmTitle}</h3>
+              <p>{customConfirmMessage}</p>
+              <div className="confirm-btn-group">
+                <button className="btn-secondary" onClick={() => setCustomConfirmOpen(false)}>Cancel</button>
+                <button className="btn-danger" onClick={() => {
+                  if (customConfirmAction) customConfirmAction();
+                  setCustomConfirmOpen(false);
+                }}>Confirm</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -818,6 +886,11 @@ export default function App() {
       {/* 📇 Footer */}
       <footer className="site-footer">
         <p>© 2026 DopaMind. Built for positive focus habits.</p>
+        <div className="footer-links">
+          <button className="legal-link-btn" onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy Policy</button>
+          <span className="dot-divider">•</span>
+          <button className="legal-link-btn" onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}>Terms of Service</button>
+        </div>
       </footer>
 
       {/* 🔑 Authentication Modal Overlay */}
@@ -875,6 +948,79 @@ export default function App() {
               </button>
             </p>
           </div>
+        </div>
+      )}
+
+      {/* ⚖️ Legal Modal Overlay */}
+      {legalModalOpen && (
+        <div className="legal-modal-overlay" onClick={() => setLegalModalOpen(false)}>
+          <div className="legal-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="legal-close-btn" onClick={() => setLegalModalOpen(false)}>×</button>
+            <div className="legal-tab-headers">
+              <button 
+                className={`legal-tab ${legalModalTab === 'privacy' ? 'active' : ''}`} 
+                onClick={() => setLegalModalTab('privacy')}
+              >
+                Privacy Policy
+              </button>
+              <button 
+                className={`legal-tab ${legalModalTab === 'terms' ? 'active' : ''}`} 
+                onClick={() => setLegalModalTab('terms')}
+              >
+                Terms of Service
+              </button>
+            </div>
+            <div className="legal-document-content">
+              {legalModalTab === 'privacy' ? (
+                <div className="legal-text-panel">
+                  <h2>Privacy Policy</h2>
+                  <p><strong>Last Updated: July 4, 2026</strong></p>
+                  <p>
+                    Your privacy is our priority. DopaMind is a zero-bloat cognitive focus gym designed to respect your attention and your data.
+                  </p>
+                  <h3>1. Information Collection</h3>
+                  <p>
+                    We collect only the bare minimum credentials (email address) required to create and authenticate your account. We log game statistics (accuracy percentage, attempts, score, and reaction speed metrics) strictly to compute dashboard charts.
+                  </p>
+                  <h3>2. Trackers & Analytics</h3>
+                  <p>
+                    DopaMind does NOT use third-party advertising cookie trackers, Google Analytics pixels, or telemetry crawlers. 
+                  </p>
+                  <h3>3. Data Security</h3>
+                  <p>
+                    All profile information is stored on encrypted database clusters provided by Supabase. Access is governed strictly via secure PostgreSQL Row Level Security (RLS) rules.
+                  </p>
+                </div>
+              ) : (
+                <div className="legal-text-panel">
+                  <h2>Terms of Service</h2>
+                  <p><strong>Last Updated: July 4, 2026</strong></p>
+                  <p>
+                    By using the DopaMind platform, you agree to comply with and be bound by the following Terms of Service.
+                  </p>
+                  <h3>1. Attention Gym Service</h3>
+                  <p>
+                    DopaMind provides gamified cognitive focus training. Our games are meant as training aids and do not constitute clinical treatments or medical diagnoses for ADHD or processing delays.
+                  </p>
+                  <h3>2. User Accounts</h3>
+                  <p>
+                    You are solely responsible for keeping your login credentials confidential. Any activity executed under your profile remains your responsibility.
+                  </p>
+                  <h3>3. Termination</h3>
+                  <p>
+                    We reserve the right to restrict or terminate access to accounts attempting to exploit database security or inject malicious SQL commands.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔔 Toast Notification Banner */}
+      {toastMessage && (
+        <div className="toast-notification-banner animate-pop">
+          🌿 {toastMessage}
         </div>
       )}
     </div>
