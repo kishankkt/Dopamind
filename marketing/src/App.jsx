@@ -44,6 +44,7 @@ export default function App() {
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState("privacy"); // 'privacy' | 'terms'
   const [authSuccessMessage, setAuthSuccessMessage] = useState("");
+  const [isFirstCard, setIsFirstCard] = useState(true);
 
   // 🕹️ SpeedMatch Active Game States
   const [gameState, setGameState] = useState("inactive"); // 'inactive' | 'playing' | 'summary'
@@ -255,6 +256,7 @@ export default function App() {
   // Start SpeedMatch game round
   const startSpeedMatch = () => {
     setGameState("playing");
+    setIsFirstCard(true);
     setGameScore(0);
     setGameAttempts(0);
     setGameTimeLeft(45);
@@ -263,10 +265,22 @@ export default function App() {
     setConsecutiveIncorrect(0);
     latencyRecords.current = [];
 
-    const shape1 = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-    let shape2 = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-    setPreviousShape(shape1);
-    setCurrentShape(shape2);
+    const firstShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    setCurrentShape(firstShape);
+    setPreviousShape("");
+  };
+
+  const transitionFromFirstCard = () => {
+    setIsFirstCard(false);
+    setPreviousShape(currentShape);
+    
+    // Choose next shape (35% match chance)
+    if (Math.random() < 0.35) {
+      setCurrentShape(currentShape);
+    } else {
+      const nextShapes = SHAPES.filter(s => s !== currentShape);
+      setCurrentShape(nextShapes[Math.floor(Math.random() * nextShapes.length)]);
+    }
 
     cardTimeRemainingRef.current = 2.5;
     cardStartTimestamp.current = Date.now();
@@ -367,6 +381,13 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (gameState !== "playing") return;
+      if (isFirstCard) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          transitionFromFirstCard();
+        }
+        return;
+      }
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         handleDecision(true);
@@ -377,7 +398,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [gameState, currentShape, previousShape, consecutiveCorrect, consecutiveIncorrect, currentSpeedLimit]);
+  }, [gameState, currentShape, previousShape, consecutiveCorrect, consecutiveIncorrect, currentSpeedLimit, isFirstCard]);
 
   // Clean end of 45-second round
   const endGameRound = async () => {
@@ -412,12 +433,12 @@ export default function App() {
           const newStreak = streak + 1;
           const { error } = await supabase
             .from('profiles')
-            .upsert({
-              id: session.user.id,
+            .update({
               streak_count: newStreak,
               last_played_at: new Date().toISOString(),
               plant_stage: newStreak >= 30 ? 3 : newStreak >= 7 ? 2 : newStreak >= 3 ? 1 : 0
-            });
+            })
+            .eq('id', session.user.id);
           if (!error) {
             setStreak(newStreak);
             setLastPlayed(today);
@@ -589,6 +610,9 @@ export default function App() {
           </div>
           <div className="sidebar-footer">
             <p>Logged in as: <br /><strong>{session.user.email}</strong></p>
+            <button className="sidebar-logout-btn" onClick={handleLogout}>
+              🚪 Log Out
+            </button>
           </div>
         </aside>
 
@@ -671,18 +695,32 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="game-instructions">
-                Is this shape the same as the one shown directly before?
-              </div>
-
-              <div className="action-buttons-group">
-                <button className="btn-action match-no" onClick={() => handleDecision(false)}>
-                  No Match (➡️ Key)
-                </button>
-                <button className="btn-action match-yes" onClick={() => handleDecision(true)}>
-                  Match (⬅️ Key)
-                </button>
-              </div>
+              {isFirstCard ? (
+                <>
+                  <div className="game-instructions text-highlight animate-pulse" style={{ color: 'var(--color-emerald-base)', fontWeight: '700' }}>
+                    👀 Memorize this first shape. The comparison starts on the next card!
+                  </div>
+                  <div className="action-buttons-group">
+                    <button className="btn-primary start-comparison-btn" style={{ width: '100%', padding: '14px', borderRadius: '12px' }} onClick={transitionFromFirstCard}>
+                      Start Comparison (Enter / Space) ➡️
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="game-instructions">
+                    Is this shape the same as the one shown directly before?
+                  </div>
+                  <div className="action-buttons-group">
+                    <button className="btn-action match-no" onClick={() => handleDecision(false)}>
+                      No Match (➡️ Key)
+                    </button>
+                    <button className="btn-action match-yes" onClick={() => handleDecision(true)}>
+                      Match (⬅️ Key)
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -706,7 +744,7 @@ export default function App() {
                 </div>
               </div>
               <div className="summary-actions">
-                <button className="btn-primary" onClick={() => setGameState("inactive")}>
+                <button className="btn-primary" onClick={() => { setGameState("inactive"); setActiveTab("dashboard"); }}>
                   Return to Dashboard
                 </button>
                 <button className="btn-secondary" onClick={startSpeedMatch}>
