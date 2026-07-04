@@ -113,7 +113,7 @@ export default function CountFlow({ onComplete, onQuit }) {
             key={i} 
             className="btn-action" 
             onClick={() => handleSelection(opt)}
-            style={{ padding: '20px', fontSize: '1.5rem', background: 'rgba(255,255,255,0.05)' }}
+            style={{ padding: '20px', fontSize: '1.5rem', background: 'var(--bg)', border: '1px solid var(--border)' }}
           >
             {opt}
           </button>

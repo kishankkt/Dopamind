@@ -126,7 +126,7 @@ export default function WordWarp({ onComplete, onQuit }) {
             key={i} 
             className="btn-action" 
             onClick={() => handleSelection(optName)}
-            style={{ padding: '20px', fontSize: '1.2rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}
+            style={{ padding: '20px', fontSize: '1.2rem', fontWeight: 'bold', background: 'var(--bg)', border: '1px solid var(--border)' }}
           >
             {optName}
           </button>

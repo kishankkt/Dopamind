@@ -105,14 +105,14 @@ export default function PatternPulse({ onComplete, onQuit }) {
             key={i} 
             onClick={() => handleSelection(i)}
             style={{ 
-              padding: '20px', 
-              fontSize: '2rem', 
-              fontWeight: 'bold', 
-              background: 'rgba(255,255,255,0.05)',
+              width: '60px', height: '60px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.8rem', fontWeight: 'bold',
+              background: 'var(--bg)',
               borderRadius: '12px',
-              textAlign: 'center',
               cursor: 'pointer',
-              border: '1px solid rgba(255,255,255,0.1)',
+              transition: 'all 0.1s ease',
+              border: '1px solid var(--border)',
               transition: 'background-color 0.2s'
             }}
           >

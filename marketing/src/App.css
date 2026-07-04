@@ -661,8 +661,8 @@
 }
 
 .auth-error-msg {
-  color: var(--color-error);
-  font-size: 0.85rem;
+  color: var(--color-error-coral);
+  font-size: 0.9rem;
   font-weight: 500;
   margin-bottom: 16px;
 }
@@ -957,8 +957,10 @@
 }
 
 .game-card-display {
-  width: 160px;
-  height: 160px;
+  min-width: 160px;
+  width: fit-content;
+  min-height: 160px;
+  padding: 0 24px;
   background: var(--color-oat);
   border: 2px solid var(--border-light);
   border-radius: 20px;
@@ -967,6 +969,7 @@
   align-items: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  white-space: nowrap;
 }
 
 .game-card-display.correct {
@@ -976,7 +979,7 @@
 }
 
 .game-card-display.incorrect {
-  border-color: var(--color-error);
+  border-color: var(--color-error-coral);
   background: #fdf2f2;
   transform: scale(0.95);
 }
@@ -1085,7 +1088,7 @@
 
 .btn-danger {
   padding: 12px 24px;
-  background: var(--color-error);
+  background: var(--color-error-coral);
   color: var(--color-white);
   border: none;
   border-radius: 12px;

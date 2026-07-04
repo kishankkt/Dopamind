@@ -113,8 +113,8 @@ export default function FocusGrid({ onComplete, onQuit }) {
             onClick={() => handleTileClick(i)}
             style={{
               width: '100px', height: '100px', 
-              backgroundColor: activeTile === i ? 'var(--color-emerald-base)' : 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: activeTile === i ? 'var(--color-emerald-base)' : 'var(--bg)',
+              border: '2px solid var(--border)',
               borderRadius: '16px', 
               cursor: isShowingSequence ? 'default' : 'pointer',
               transition: 'all 0.2s ease',
@@ -125,7 +125,7 @@ export default function FocusGrid({ onComplete, onQuit }) {
       </div>
 
       <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginTop: '20px' }}>
-        {isShowingSequence ? "👀 Memorize the pattern..." : "👉 Repeat the sequence!"}
+        {isShowingSequence ? "Memorize the pattern..." : "Repeat the sequence!"}
       </div>
 
       <div className="action-buttons-group" style={{marginTop: '40px'}}>

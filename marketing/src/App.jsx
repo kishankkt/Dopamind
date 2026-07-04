@@ -5,7 +5,13 @@ import FocusGrid from './games/FocusGrid';
 import CountFlow from './games/CountFlow';
 import WordWarp from './games/WordWarp';
 import PatternPulse from './games/PatternPulse';
+import ReactionTap from './games/ReactionTap';
+import NumberCascade from './games/NumberCascade';
+import SymbolMatch from './games/SymbolMatch';
+import DirectionDash from './games/DirectionDash';
+import TimeEstimator from './games/TimeEstimator';
 import { logGameSession } from './utils/gameEngine';
+import { LayoutDashboard, Gamepad2, Settings, LogOut, Sun, Moon, Zap, Grid, Hash, Palette, Search, MousePointerClick, ListOrdered, Copy, Move, Clock } from 'lucide-react';
 import './App.css';
 
 // 🧮 Frequencies for the Ascending Pentatonic Scale
@@ -31,6 +37,15 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'games' | 'settings'
   const [streak, setStreak] = useState(0);
   const [lastPlayed, setLastPlayed] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   // Authentication State
   const [authOpen, setAuthOpen] = useState(false);
@@ -462,35 +477,70 @@ export default function App() {
       name: '1. SpeedMatch',
       focus: 'Processing Speed & Focus',
       description: 'Compare current symbols with the previous ones under adaptive speed shifts. Trains fast decision loops and focus lock.',
-      icon: '⚡'
+      icon: <Zap size={28} />
     },
     {
       id: 'focusgrid',
       name: '2. FocusGrid',
       focus: 'Spatial Sequence Memory',
       description: 'Flashes patterns of tiles on a grid to replicate. Strengthens working memory and spatial tracking skills.',
-      icon: '⏹️'
+      icon: <Grid size={28} />
     },
     {
       id: 'countflow',
       name: '3. CountFlow',
       focus: 'Mental Math & Agility',
       description: 'Solve falling arithmetic equations in a Tetris-like environment. Heightens numerical agility under cognitive stress.',
-      icon: '🧮'
+      icon: <Hash size={28} />
     },
     {
       id: 'wordwarp',
       name: '4. WordWarp',
       focus: 'Cognitive Flexibility',
       description: 'The Stroop test: identify mismatching word colors under timing pressure. Calibrates inhibitory control filters.',
-      icon: '🎨'
+      icon: <Palette size={28} />
     },
     {
       id: 'patternpulse',
       name: '5. PatternPulse',
       focus: 'Pattern Recognition',
       description: 'Locate subtle anomalies and differences in complex, changing designs. Sharpens visual search speed.',
-      icon: '👁️'
+      icon: <Search size={28} />
+    },
+    {
+      id: 'reactiontap',
+      name: '6. ReactionTap',
+      focus: 'Reflex Latency',
+      description: 'Pure visual-motor reflex test. Tap instantly when the screen flashes green.',
+      icon: <MousePointerClick size={28} />
+    },
+    {
+      id: 'numbercascade',
+      name: '7. NumberCascade',
+      focus: 'Working Memory',
+      description: 'Memorize and reverse number sequences under time pressure.',
+      icon: <ListOrdered size={28} />
+    },
+    {
+      id: 'symbolmatch',
+      name: '8. SymbolMatch',
+      focus: 'Visual Processing',
+      description: 'Find the single matching symbol between grids. Strengthens visual scanning.',
+      icon: <Copy size={28} />
+    },
+    {
+      id: 'directiondash',
+      name: '9. DirectionDash',
+      focus: 'Inhibitory Control',
+      description: 'Match directions, but quickly reverse your input if the arrow turns red.',
+      icon: <Move size={28} />
+    },
+    {
+      id: 'timeestimator',
+      name: '10. TimeEstimator',
+      focus: 'Temporal Perception',
+      description: 'Hold and release precisely on time. Calibrates your internal biological clock.',
+      icon: <Clock size={28} />
     }
   ];
 
@@ -550,7 +600,7 @@ export default function App() {
                   }
                 }}
               >
-                <span>🪴</span> Dashboard
+                <span><LayoutDashboard size={20} /></span> Dashboard
               </button>
               <button 
                 className={`menu-item ${activeTab === "games" ? "active" : ""}`}
@@ -568,7 +618,7 @@ export default function App() {
                   }
                 }}
               >
-                <span>🕹️</span> Games Gym
+                <span><Gamepad2 size={20} /></span> Games Gym
               </button>
               <button 
                 className={`menu-item ${activeTab === "settings" ? "active" : ""}`}
@@ -586,14 +636,17 @@ export default function App() {
                   }
                 }}
               >
-                <span>⚙️</span> Settings
+                <span><Settings size={20} /></span> Settings
               </button>
             </nav>
           </div>
           <div className="sidebar-footer">
             <p>Logged in as: <br /><strong>{session.user.email}</strong></p>
+            <button className="sidebar-logout-btn" style={{marginTop: '10px', background: 'transparent', color: 'var(--text)', border: '1px solid var(--border)'}} onClick={() => setDarkMode(!darkMode)}>
+              {darkMode ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
+            </button>
             <button className="sidebar-logout-btn" onClick={handleLogout}>
-              🚪 Log Out
+              <LogOut size={18} /> Log Out
             </button>
           </div>
         </aside>
@@ -682,11 +735,11 @@ export default function App() {
               {isFirstCard ? (
                 <>
                   <div className="game-instructions text-highlight animate-pulse" style={{ color: 'var(--color-emerald-base)', fontWeight: '700' }}>
-                    👀 Memorize this first shape. The comparison starts on the next card!
+                    Memorize this first shape. The comparison starts on the next card!
                   </div>
                   <div className="action-buttons-group">
                     <button className="btn-primary start-comparison-btn" style={{ width: '100%', padding: '14px', borderRadius: '12px' }} onClick={transitionFromFirstCard}>
-                      Start Comparison (Enter / Space) ➡️
+                      Start Comparison (Enter / Space)
                     </button>
                   </div>
                 </>
@@ -697,10 +750,10 @@ export default function App() {
                   </div>
                   <div className="action-buttons-group">
                     <button className="btn-action match-no" onClick={() => handleDecision(false)}>
-                      No Match (➡️ Key)
+                      No Match (Right Key)
                     </button>
                     <button className="btn-action match-yes" onClick={() => handleDecision(true)}>
-                      Match (⬅️ Key)
+                      Match (Left Key)
                     </button>
                   </div>
                 </>
@@ -712,6 +765,11 @@ export default function App() {
           {gameState === "playing" && activeGameId === "countflow" && <CountFlow onComplete={(s) => handleGameComplete("countflow", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
           {gameState === "playing" && activeGameId === "wordwarp" && <WordWarp onComplete={(s) => handleGameComplete("wordwarp", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
           {gameState === "playing" && activeGameId === "patternpulse" && <PatternPulse onComplete={(s) => handleGameComplete("patternpulse", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "reactiontap" && <ReactionTap onComplete={(s) => handleGameComplete("reactiontap", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "numbercascade" && <NumberCascade onComplete={(s) => handleGameComplete("numbercascade", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "symbolmatch" && <SymbolMatch onComplete={(s) => handleGameComplete("symbolmatch", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "directiondash" && <DirectionDash onComplete={(s) => handleGameComplete("directiondash", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "timeestimator" && <TimeEstimator onComplete={(s) => handleGameComplete("timeestimator", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
 
           {/* 📊 Game Summary Mode */}
           {gameState === "summary" && summaryStats && (
@@ -749,12 +807,31 @@ export default function App() {
                 <h1>Settings</h1>
                 <p>Manage your account configurations and profile connections.</p>
               </header>
-              <div className="glass-panel settings-card">
+              <div className="glass-panel settings-card" style={{ maxWidth: '600px' }}>
                 <h2>User Profile</h2>
-                <p>Account Email: <strong>{session.user.email}</strong></p>
-                <button className="btn-danger" onClick={handleLogout}>
-                  Log Out / Sign Out
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--color-emerald-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2.5rem', fontWeight: 'bold' }}>
+                      {session.user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, opacity: 0.7 }}>Account Email</p>
+                      <strong style={{ fontSize: '1.2rem' }}>{session.user.email}</strong>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginTop: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Username</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="text" 
+                        defaultValue={session.user.email.split('@')[0]} 
+                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: '1rem' }} 
+                      />
+                      <button className="btn-primary" onClick={() => showToast("Profile updated successfully!")}>Update Profile</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           )}
