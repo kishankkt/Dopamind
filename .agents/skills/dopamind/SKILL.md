@@ -70,3 +70,20 @@ Vercel is linked to the repository root. Build pipeline is handled via:
 - Install Command: `cd marketing && npm install`
 - Output Directory: `marketing/dist`
 - Serverless API functions: Mapped automatically from the root `/api` directory.
+
+---
+
+## 🧠 Architectural & Coding Principles
+
+To maintain specialist-grade engineering standards and ensure DopaMind remains easily updateable, modular, and future-ready:
+
+* **DRY (Don't Repeat Yourself) & Shared Helpers:** Avoid duplicate logic. Put state helpers, formatters, and analytics triggers in centralized modules.
+* **Modular API-First Separation:** Decouple front-end view state from database and external logic. Communicate exclusively via clean API calls (e.g., Supabase JS query layers and Serverless functions).
+* **Specialist Design Quality (Dark & White Themes):** 
+  - Style interfaces using unified CSS custom properties (`var(--...)`) mapping to a consistent sage-green palette.
+  - Implement fluid layout transitions and high-performance micro-animations.
+  - Interface must seamlessly shift between light and dark themes using unified system preferences.
+* **Future-Ready & Native Device Portability:** 
+  - Keep styling layouts fully fluid, mobile-first, and responsive.
+  - Ensure front-end code is compatible with standard Web views as well as native desktop wrapper containers (like Tauri or Electron shells).
+* **Connectable Database Scaling:** Write clean migrations, schemas, and triggers that allow adding new features (like extra mini-games) without altering core profiles or breaking historical data sets.
