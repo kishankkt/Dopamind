@@ -64,12 +64,28 @@ export async function generateLeafDialogue(context) {
 }
 
 /**
+ * 💬 Conversational Chat with Leaf
+ * @param {array} history - Array of {role, content} message objects
+ * @returns {string} - AI response
+ */
+export async function chatWithLeaf(history) {
+  const systemPrompt = {
+    role: "system",
+    content: "You are DopaMind's minimalist 🌿 cognitive guide. CRITICAL: Your responses must be extremely concise, short, and highly structured (use simple bullet points). Never write paragraphs or long sentences. Do not exceed 2 short sentences. Be direct and focus on cognitive guidance. You know the platform has 15 games: SpeedMatch, FocusGrid, CountFlow, WordWarp, PatternPulse, ReactionTap, NumberCascade, SymbolMatch, DirectionDash, TimeEstimator, GravitySort, EchoMap, PhaseLock, ChromaShift, WeightGuess."
+  };
+  
+  const messages = [systemPrompt, ...history];
+  const response = await fetchOpenRouter(messages, 0.7, 500);
+  return response || "Oops, my connection to the cognitive stream was interrupted. Say that again?";
+}
+
+/**
  * 📅 Build Brain Training Schedule
  * @param {object} userAnswers - JSON object of goals (e.g. { goal: "Reflexes", time: "10 mins" })
  * @returns {array} - Array of game objects recommended to play.
  */
 export async function buildBrainSchedule(userAnswers) {
-  const gamesList = ["FocusGrid", "CountFlow", "WordWarp", "PatternPulse", "ReactionTap", "NumberCascade", "SymbolMatch", "DirectionDash", "TimeEstimator", "SpeedMatch"];
+  const gamesList = ["FocusGrid", "CountFlow", "WordWarp", "PatternPulse", "ReactionTap", "NumberCascade", "SymbolMatch", "DirectionDash", "TimeEstimator", "SpeedMatch", "GravitySort", "EchoMap", "PhaseLock", "ChromaShift", "WeightGuess"];
   
   const messages = [
     {
@@ -81,7 +97,7 @@ Output ONLY JSON, no markdown formatting or extra text.`
     },
     {
       role: "user",
-      content: `User Profile: Goal=${userAnswers.goal}, Time Available=${userAnswers.time}. Build their schedule.`
+      content: `User Profile: Name=${userAnswers.name || 'User'}, Energy Level=${userAnswers.energyLevel || 'Medium'}, Cognitive State=${userAnswers.cognitiveState || 'Normal'}, Goal=${userAnswers.goal}, Time Available=${userAnswers.time}. Build a deeply customized neuro-architect schedule.`
     }
   ];
 

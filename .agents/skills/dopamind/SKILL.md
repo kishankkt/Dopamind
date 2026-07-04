@@ -1,38 +1,152 @@
 ---
 name: DopaMind Platform Guidelines
-description: Developer guidelines, SVG logo assets, database schema configurations, and Vercel monorepo patterns for DopaMind.
+description: Complete platform inventory, developer guidelines, SVG logo assets, database schema configurations, Vercel monorepo patterns, and Regular/Growth management framework for DopaMind.
 ---
 
-# 🌿 DopaMind - Core Developer Guidelines
+# 🌿 DopaMind — Platform Inventory & Developer Skill
 
-This file is a developer skill configuration. It instructs future coding agents how to build, maintain, and scale the DopaMind platform without context drift.
+This file is the **single source of truth** for every moving part in DopaMind. It instructs coding agents how to build, maintain, and scale the platform without context drift.
+
+Every item in this platform falls into exactly one of two management categories:
+
+| Parameter | Definition | Action |
+|-----------|-----------|--------|
+| **🔄 Regular** | Already built. Needs ongoing maintenance, bug fixes, polish, and content updates. | Protect it. Don't break it. Improve quality. |
+| **🚀 Growth** | Not yet built or partially built. Needs new code, new features, new infrastructure. | Build it. Ship it. Expand the platform. |
 
 ---
 
-## 🏛️ DopaMind 4-Level Platform Taxonomy
-
-DopaMind is meticulously managed via a strict First Principles taxonomy. Any new feature must be classified into one of these 4 levels before development begins.
+## 📊 FULL PLATFORM INVENTORY
 
 ### Level 1: Public Marketing & Growth Engine
-*   **Role:** The public face of the app (SEO, conversions, pricing).
-*   **Status:** Built (Vite/React shell).
+> The public-facing landing page that converts visitors into users.
+
+| Item | File(s) | Status | Parameter |
+|------|---------|--------|-----------|
+| Landing Page Hero | `App.jsx` (visitor return) | ✅ Built | 🔄 Regular |
+| Landing Page Header + Nav | `App.jsx` | ✅ Built | 🔄 Regular |
+| Interactive Trial Widget (15s) | `InteractiveGame.jsx` | ✅ Built | 🔄 Regular |
+| Games Roadmap Grid | `App.jsx` (landing #games) | ✅ Built | 🔄 Regular |
+| Streak Plant Explainer Section | `App.jsx` (landing #streak) | ✅ Built | 🔄 Regular |
+| FAQ Accordion | `App.jsx` (landing #faq) | ✅ Built | 🔄 Regular |
+| Footer + Legal Links | `App.jsx` | ✅ Built | 🔄 Regular |
+| Privacy Policy Modal | `App.jsx` | ✅ Built | 🔄 Regular |
+| Terms of Service Modal | `App.jsx` | ✅ Built | 🔄 Regular |
+| SEO Meta Tags | `index.html` | ✅ Built | 🔄 Regular |
+| Pricing Page / Stripe Integration | `api/stripe-webhook.js` | ⚠️ Partial | 🚀 Growth |
+| Blog / Content Marketing | — | ❌ Not Built | 🚀 Growth |
+| Social Proof / Testimonials | — | ❌ Not Built | 🚀 Growth |
+| App Store / PWA Install Banner | — | ❌ Not Built | 🚀 Growth |
+
+---
 
 ### Level 2: User Flow Engine
-*   **Role:** Supabase Authentication, Onboarding, Profile creation.
-*   **Status:** Built (Email/Password, Google OAuth).
+> Authentication, onboarding, and profile management.
+
+| Item | File(s) | Status | Parameter |
+|------|---------|--------|-----------|
+| Email/Password Auth | `App.jsx` + `supabaseClient.js` | ✅ Built | 🔄 Regular |
+| Google OAuth Login | `App.jsx` | ✅ Built | 🔄 Regular |
+| Signup Success + Email Verification | `App.jsx` | ✅ Built | 🔄 Regular |
+| Auth Modal (Glassmorphic) | `App.jsx` | ✅ Built | 🔄 Regular |
+| Settings / Profile Page | `views/SettingsView.jsx` | ✅ Built | 🔄 Regular |
+| Username Update | `views/SettingsView.jsx` | ✅ Built | 🔄 Regular |
+| Logout Flow | `App.jsx` (sidebar) | ✅ Built | 🔄 Regular |
+| Password Reset Flow | — | ❌ Not Built | 🚀 Growth |
+| Onboarding Wizard (First-Time User) | — | ❌ Not Built | 🚀 Growth |
+| Avatar / Profile Picture Upload | — | ❌ Not Built | 🚀 Growth |
+| Account Deletion | — | ❌ Not Built | 🚀 Growth |
+
+---
 
 ### Level 3: App-Level Engines
-*   **Role:** Global gamification, social logic, and AI layers overlaying the core experience.
-*   **Status:**
-    *   `Seeding Board (Streak Engine)`: Built.
-    *   `Performance Engine`: Built (Recharts telemetry).
-    *   `Global Leaderboard`: Built (Supabase joins).
-    *   `Interactive Leaf (Companion Engine)`: Built.
-    *   `Guidance & Schedule Builder (AI Engine)`: Built.
+> Global systems that sit on top of the games and drive engagement.
 
-### Level 4: Brain Gym (The Games Engine)
-*   **Role:** The isolated cognitive testing components.
-*   **Games:** SpeedMatch, TimeEstimator, DirectionDash, SymbolMatch, NumberCascade, ReactionTap, PatternPulse, WordWarp, CountFlow, FocusGrid.
+| Engine | File(s) | Status | Parameter |
+|--------|---------|--------|-----------|
+| **Seeding Board (Streak Engine)** | `App.jsx` + `utils/gameEngine.js` | ✅ Built | 🔄 Regular |
+| Streak Plant Visualizer (5 SVG stages) | `components/PlantIcons.jsx` | ✅ Built | 🔄 Regular |
+| **Performance Engine** (Recharts) | `components/PerformanceChart.jsx` | ✅ Built | 🔄 Regular |
+| **Global Leaderboard** | `components/Leaderboard.jsx` | ✅ Built | 🔄 Regular |
+| **Interactive Leaf Companion** | `components/InteractiveLeaf.jsx` | ✅ Built | 🔄 Regular |
+| **AI Guidance / Schedule Builder** | `components/ScheduleBuilder.jsx` | ✅ Built | 🔄 Regular |
+| **AI Engine (OpenRouter)** | `utils/aiEngine.js` | ✅ Built | 🔄 Regular |
+| AI Orchestration Loop (Queue Runner) | `App.jsx` (handleStartOrchestration) | ✅ Built | 🔄 Regular |
+| Dark / Light Theme Toggle | `App.jsx` + `App.css` + `index.css` | ✅ Built | 🔄 Regular |
+| Toast Notification System | `App.jsx` (showToast) | ✅ Built | 🔄 Regular |
+| Confirm Dialog System | `App.jsx` (triggerConfirm) | ✅ Built | 🔄 Regular |
+| Sound Engine (Pentatonic Chimes) | `App.jsx` (AudioContext) | ✅ Built | 🔄 Regular |
+| Notifications / Push Engine | — | ❌ Not Built | 🚀 Growth |
+| Achievements / Badges System | — | ❌ Not Built | 🚀 Growth |
+| Social Sharing (Share Score) | — | ❌ Not Built | 🚀 Growth |
+| Daily Challenges / Quests | — | ❌ Not Built | 🚀 Growth |
+| Multiplayer / Friend System | — | ❌ Not Built | 🚀 Growth |
+| Analytics Dashboard (Admin) | — | ❌ Not Built | 🚀 Growth |
+
+---
+
+### Level 4: Brain Gym — The Games Engine
+> All 15 cognitive training games. Each game follows the `onComplete({score, attempts, accuracy_percent, avg_speed_seconds})` API contract.
+
+| # | Game | File | Focus | Type | Parameter |
+|---|------|------|-------|------|-----------|
+| 1 | SpeedMatch | `App.jsx` (inline) | Processing Speed | Timed (45s) | 🔄 Regular |
+| 2 | FocusGrid | `games/FocusGrid.jsx` | Spatial Sequence Memory | Timed | 🔄 Regular |
+| 3 | CountFlow | `games/CountFlow.jsx` | Mental Math & Agility | Timed | 🔄 Regular |
+| 4 | WordWarp | `games/WordWarp.jsx` | Cognitive Flexibility (Stroop) | Timed | 🔄 Regular |
+| 5 | PatternPulse | `games/PatternPulse.jsx` | Pattern Recognition | Timed | 🔄 Regular |
+| 6 | ReactionTap | `games/ReactionTap.jsx` | Reflex Latency | 5 Rounds | 🔄 Regular |
+| 7 | NumberCascade | `games/NumberCascade.jsx` | Working Memory | Timed | 🔄 Regular |
+| 8 | SymbolMatch | `games/SymbolMatch.jsx` | Visual Processing | Timed | 🔄 Regular |
+| 9 | DirectionDash | `games/DirectionDash.jsx` | Inhibitory Control | Timed | 🔄 Regular |
+| 10 | TimeEstimator | `games/TimeEstimator.jsx` | Temporal Perception | 5 Rounds | 🔄 Regular |
+| 11 | **GravitySort** | `games/GravitySort.jsx` | Executive Prioritization | Endless | 🔄 Regular |
+| 12 | **EchoMap** | `games/EchoMap.jsx` | Reverse Working Memory | Endless | 🔄 Regular |
+| 13 | **PhaseLock** | `games/PhaseLock.jsx` | Temporal Synchronization | Endless | 🔄 Regular |
+| 14 | **ChromaShift** | `games/ChromaShift.jsx` | Visual Color Memory | Endless | 🔄 Regular |
+| 15 | **WeightGuess** | `games/WeightGuess.jsx` | Cognitive Conflict Resolution | Endless | 🔄 Regular |
+
+---
+
+### Level 5: Infrastructure & DevOps
+
+| Item | File(s) | Status | Parameter |
+|------|---------|--------|-----------|
+| Vercel Deployment Pipeline | `vercel.json` | ✅ Built | 🔄 Regular |
+| Supabase Database | `supabase/schema.sql` + `config.toml` | ✅ Built | 🔄 Regular |
+| Stripe Webhook API | `api/stripe-webhook.js` | ⚠️ Partial | 🚀 Growth |
+| Environment Variables (.env) | `marketing/.env` | ✅ Built | 🔄 Regular |
+| Git Version Control | `.git` | ✅ Built | 🔄 Regular |
+| CI/CD Pipeline | `ci-cd/` | ⚠️ Scaffolded | 🚀 Growth |
+| Automated Tests | `tests/` | ⚠️ Scaffolded | 🚀 Growth |
+| i18n Localization | `locales/` | ⚠️ Scaffolded | 🚀 Growth |
+
+---
+
+### UI Architecture & Views
+
+| Item | File(s) | Status | Parameter |
+|------|---------|--------|-----------|
+| App Shell (Sidebar + Content Panel) | `App.jsx` | ✅ Built | 🔄 Regular |
+| Dashboard View | `views/DashboardView.jsx` | ✅ Built | 🔄 Regular |
+| Brain Gym View | `views/BrainGymView.jsx` | ✅ Built | 🔄 Regular |
+| Settings View | `views/SettingsView.jsx` | ✅ Built | 🔄 Regular |
+| Mobile Responsive Layout | `App.css` (@media) | ✅ Built | 🔄 Regular |
+| Sidebar Fixed on Mobile | `App.css` (position: fixed) | ✅ Built | 🔄 Regular |
+
+---
+
+## 📈 SUMMARY COUNTS
+
+| Category | Regular (Maintenance) | Growth (To Build) |
+|----------|----------------------|-------------------|
+| Marketing & Landing | 10 items | 4 items |
+| User Flow | 6 items | 4 items |
+| App Engines | 12 items | 5 items |
+| Games | 15 games | 0 (next batch TBD) |
+| Infrastructure | 4 items | 4 items |
+| UI Views | 6 items | 0 |
+| **TOTAL** | **53 items** | **17 items** |
 
 ---
 
@@ -71,6 +185,8 @@ When rendering the logo, do not use emoji. Render this inline SVG so it dynamica
 </svg>
 ```
 
+The 🌿 leaf emoji is reserved exclusively for the landing page hero badge, the AI chatbot avatar, and the Interactive Leaf companion. The sidebar and internal navigation use the SVG logo above.
+
 ---
 
 ## 🗄️ Database Schemas & Auth Triggers
@@ -86,8 +202,21 @@ To ensure optimal schema isolation, the core `profiles` table only manages globa
 
 ---
 
-## 💎 Premium UX & Design Guidelines
-* **No Default Popups:** Banned using `window.alert()` or `window.confirm()`. All warnings, success toasts, and exit confirmations MUST be rendered as custom glassmorphic modals that adapt to dark/light templates.
+## 🎮 Game API Contract
+Every game component MUST accept these props and follow this contract:
+
+```jsx
+// Props
+{ onComplete: (stats) => void, onQuit: () => void }
+
+// stats object shape (passed to onComplete)
+{
+  score: number,           // Total correct actions
+  attempts: number,        // Total actions taken
+  accuracy_percent: number, // Math.round((score / attempts) * 100)
+  avg_speed_seconds: number // Average reaction/decision time in seconds
+}
+```
 
 ---
 
@@ -97,6 +226,11 @@ Vercel is linked to the repository root. Build pipeline is handled via:
 - Install Command: `cd marketing && npm install`
 - Output Directory: `marketing/dist`
 - Serverless API functions: Mapped automatically from the root `/api` directory.
+
+---
+
+## 💎 Premium UX & Design Guidelines
+* **No Default Popups:** Banned using `window.alert()` or `window.confirm()`. All warnings, success toasts, and exit confirmations MUST be rendered as custom glassmorphic modals that adapt to dark/light templates.
 
 ---
 
