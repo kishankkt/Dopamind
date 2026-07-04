@@ -1,0 +1,49 @@
+{
+  "app_name": "DopaMind",
+  "tagline": "Positive Dopamine Brain Gym",
+  "menu": {
+    "dashboard": "Dashboard",
+    "games": "Games",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "streak": {
+    "title": "Daily Streak",
+    "days_active": "{{count}} Days Active",
+    "plant_status": "Your pixel plant is thriving!",
+    "water_shield": "Streak Water Shield Active"
+  },
+  "games": {
+    "speedmatch": {
+      "name": "SpeedMatch",
+      "tagline": "Processing Speed & Focus",
+      "start_prompt": "Match symbols to the previous one as fast as you can.",
+      "match": "Match (←)",
+      "no_match": "No Match (→)",
+      "game_over": "Round Complete!",
+      "score": "Focus Score: {{score}}"
+    },
+    "focusgrid": {
+      "name": "FocusGrid",
+      "tagline": "Working Memory Challenge"
+    },
+    "countflow": {
+      "name": "CountFlow",
+      "tagline": "Mental Math Agility"
+    },
+    "wordwarp": {
+      "name": "WordWarp",
+      "tagline": "Cognitive Flexibility"
+    },
+    "patternpulse": {
+      "name": "PatternPulse",
+      "tagline": "Pattern Recognition"
+    }
+  },
+  "common": {
+    "correct": "Correct!",
+    "incorrect": "Try again!",
+    "level": "Level {{level}}",
+    "streak_count": "{{count}}-day streak"
+  }
+}

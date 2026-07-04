@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap');
+
+:root {
+  /* DopaMind HSL Design Tokens */
+  --color-emerald-deep: hsl(145, 30%, 15%);
+  --color-emerald-base: hsl(145, 40%, 25%);
+  --color-sage-green: hsl(120, 18%, 85%);
+  --color-sage-light: hsl(120, 18%, 92%);
+  --color-oat: hsl(36, 33%, 96%);
+  --color-oat-light: hsl(36, 40%, 99%);
+  --color-accent-gold: hsl(43, 85%, 60%);
+  --color-error-coral: hsl(354, 70%, 65%);
+  --color-white: #ffffff;
+  
+  --font-header: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  --border-light: rgba(40, 77, 54, 0.08);
+  --shadow-subtle: 0 8px 32px 0 rgba(40, 77, 54, 0.03);
+  --shadow-card: 0 10px 25px -5px rgba(40, 77, 54, 0.08);
+  
+  /* Layout configs */
+  --sans: var(--font-body);
+  --heading: var(--font-header);
+  --text: var(--color-emerald-deep);
+  --bg: var(--color-oat);
+  --border: var(--border-light);
+  
+  font: 16px/150% var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-oat);
+  font-family: var(--font-body);
+  color: var(--color-emerald-deep);
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(253, 251, 247, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  box-shadow: var(--shadow-subtle);
+}
+
+.glass-card {
+  background: var(--color-oat-light);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  box-shadow: var(--shadow-subtle);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card);
+}
+
+/* Premium Button Styling */
+.btn-primary {
+  font-family: var(--font-header);
+  font-weight: 700;
+  font-size: 1rem;
+  background: var(--color-emerald-base);
+  color: var(--color-oat-light);
+  border: none;
+  padding: 12px 28px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease;
+  box-shadow: 0 4px 14px 0 rgba(40, 77, 54, 0.15);
+}
+
+.btn-primary:hover {
+  background: var(--color-emerald-deep);
+  transform: scale(1.03);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-secondary {
+  font-family: var(--font-header);
+  font-weight: 700;
+  font-size: 1rem;
+  background: var(--color-sage-light);
+  color: var(--color-emerald-base);
+  border: 1px solid rgba(40, 77, 54, 0.15);
+  padding: 12px 28px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--color-sage-green);
+  transform: scale(1.03);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* Keyframes & Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+@keyframes springPop {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-shake {
+  animation: shake 0.35s ease-in-out;
+}
+
+.animate-pop {
+  animation: springPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-bounce {
+  animation: bounceSlow 3s ease-in-out infinite;
+}

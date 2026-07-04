@@ -1,0 +1,49 @@
+{
+  "app_name": "DopaMind",
+  "tagline": "सकारात्मक डोपामाइन ब्रेन जिम",
+  "menu": {
+    "dashboard": "डैशबोर्ड",
+    "games": "खेल",
+    "analytics": "विश्लेषण",
+    "settings": "सेटिंग्स"
+  },
+  "streak": {
+    "title": "दैनिक स्ट्रीक",
+    "days_active": "{{count}} दिन सक्रिय",
+    "plant_status": "आपका पिक्सेल का पौधा फल-फूल रहा है!",
+    "water_shield": "स्ट्रीक वॉटर शील्ड सक्रिय"
+  },
+  "games": {
+    "speedmatch": {
+      "name": "SpeedMatch",
+      "tagline": "प्रोसेसिंग स्पीड और फोकस",
+      "start_prompt": "जितनी जल्दी हो सके पिछले सिंबल से वर्तमान सिंबल का मिलान करें।",
+      "match": "मिलान (←)",
+      "no_match": "मेल नहीं (→)",
+      "game_over": "दौर पूरा हुआ!",
+      "score": "फोकस स्कोर: {{score}}"
+    },
+    "focusgrid": {
+      "name": "FocusGrid",
+      "tagline": "वर्किंग मेमोरी चैलेंज"
+    },
+    "countflow": {
+      "name": "CountFlow",
+      "tagline": "मानसिक गणित चपलता"
+    },
+    "wordwarp": {
+      "name": "WordWarp",
+      "tagline": "संज्ञानात्मक लचीलापन"
+    },
+    "patternpulse": {
+      "name": "PatternPulse",
+      "tagline": "पैटर्न पहचान"
+    }
+  },
+  "common": {
+    "correct": "सही!",
+    "incorrect": "पुनः प्रयास करें!",
+    "level": "स्तर {{level}}",
+    "streak_count": "{{count}}-दिन की स्ट्रीक"
+  }
+}

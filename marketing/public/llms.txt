@@ -1,0 +1,60 @@
+# DopaMind - Project Profile & Specifications
+
+DopaMind is an ultra-lightweight, cross-platform native brain-training application (Windows, macOS, Linux, iOS, Android) designed as a "Positive Dopamine Brain Gym" to help users train cognitive functions using short-form gamified loops.
+
+---
+
+## 🎨 Branding & Identity
+
+* **Logo Specification:** A minimalist continuous-line drawing of a brain wrapping into a leaf, rendered in Emerald green.
+* **Logotype:** "DopaMind" written in Outfit Semibold, with "Dopa" in deep Emerald and "Mind" in Sage Green.
+* **Brand Styling:** Mindful, premium, spacious, soft glassmorphism (not a flashy crypto/trading design).
+* **Color Palette (HSL):**
+  - Deep Emerald: `hsl(145, 30%, 15%)`
+  - Base Emerald: `hsl(145, 40%, 25%)`
+  - Sage Green: `hsl(120, 18%, 85%)`
+  - Oat (Cream): `hsl(36, 33%, 96%)`
+  - Accent Gold: `hsl(43, 85%, 60%)`
+  - Error Coral: `hsl(354, 70%, 65%)`
+* **Typography:**
+  - Header: **Outfit**
+  - Body: **Inter**
+
+---
+
+## 💻 Tech Stack & Infrastructure
+
+* **Frontend / UI:** Vite + React (JavaScript).
+* **Native Desktop & Mobile Shell:** Tauri (delivers tiny installer packages of ~4MB by using the native OS webview instead of Chromium).
+* **Database & Auth:** Supabase PostgreSQL & Supabase Auth.
+* **Serverless Backend Hosting:** Vercel serverless functions (for webhooks, transactional processing, etc.).
+* **Deployment Assets:**
+  1. **The Web & API layer:** Hosted on Vercel.
+  2. **The Database & Auth layer:** Hosted on Supabase.
+  * *Note: Native client applications (DMG, EXE, DEB, APK, IPA) call Vercel and Supabase APIs directly from the user's local device; no separate app-hosting server is required.*
+
+---
+
+## 🕹️ Games Roadmap
+
+1. **SpeedMatch** (Priority 1 - Fully Implemented): Focus matching game with adaptive timer windows and pentatonic audio progress scaling.
+2. **FocusGrid** (Locked): Spatial sequence memory grid.
+3. **CountFlow** (Locked): Falling mental math equations true/false checker.
+4. **WordWarp** (Locked): Stroop effect mismatch identifier.
+5. **PatternPulse** (Locked): Spot-the-difference pattern locator.
+
+---
+
+## 📂 Project Directory Structure
+
+* `/brand/`: Logo guides, typography tokens, and HSL colors.
+* `/legal/`: GDPR/CCPA Privacy policy and Terms of service.
+* `/strategy/`: Growth funnels, Daily Streak plant systems, and codesigning guides.
+* `/docs/`: Helpdesk guides and macOS unidentified developer bypass steps.
+* `/marketing/`: Vite+React landing page, featuring the 15-second SpeedMatch trial.
+* `/app/`: Tauri+React native app shell containing the full 45s SpeedMatch game.
+* `/api/`: Vercel serverless function scripts (e.g. Stripe checkout webhooks).
+* `/locales/`: Localization dictionaries (EN, ES, HI).
+* `/tests/`: Vitest configuration and SpeedMatch adaptive difficulty logic suites.
+* `/ci-cd/`: GitHub Actions YAML configurations to automatically build releases.
+* `/org/`: Division of duties across departments.

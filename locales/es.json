@@ -1,0 +1,49 @@
+{
+  "app_name": "DopaMind",
+  "tagline": "Gimnasio Cerebral de Dopamina Positiva",
+  "menu": {
+    "dashboard": "Panel",
+    "games": "Juegos",
+    "analytics": "Análisis",
+    "settings": "Ajustes"
+  },
+  "streak": {
+    "title": "Racha Diaria",
+    "days_active": "{{count}} Días Activo",
+    "plant_status": "¡Tu planta de píxeles está creciendo fuerte!",
+    "water_shield": "Escudo de Racha Activo"
+  },
+  "games": {
+    "speedmatch": {
+      "name": "SpeedMatch",
+      "tagline": "Velocidad de Procesamiento y Enfoque",
+      "start_prompt": "Compara el símbolo con el anterior lo más rápido que puedas.",
+      "match": "Coincide (←)",
+      "no_match": "No Coincide (→)",
+      "game_over": "¡Ronda Completada!",
+      "score": "Puntuación de Enfoque: {{score}}"
+    },
+    "focusgrid": {
+      "name": "FocusGrid",
+      "tagline": "Desafío de Memoria de Trabajo"
+    },
+    "countflow": {
+      "name": "CountFlow",
+      "tagline": "Agilidad Matemática Mental"
+    },
+    "wordwarp": {
+      "name": "WordWarp",
+      "tagline": "Flexibilidad Cognitiva"
+    },
+    "patternpulse": {
+      "name": "PatternPulse",
+      "tagline": "Reconocimiento de Patrones"
+    }
+  },
+  "common": {
+    "correct": "¡Correcto!",
+    "incorrect": "¡Inténtalo de nuevo!",
+    "level": "Nivel {{level}}",
+    "streak_count": "Racha de {{count}} días"
+  }
+}
