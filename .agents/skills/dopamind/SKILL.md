@@ -9,6 +9,33 @@ This file is a developer skill configuration. It instructs future coding agents 
 
 ---
 
+## 🏛️ DopaMind 4-Level Platform Taxonomy
+
+DopaMind is meticulously managed via a strict First Principles taxonomy. Any new feature must be classified into one of these 4 levels before development begins.
+
+### Level 1: Public Marketing & Growth Engine
+*   **Role:** The public face of the app (SEO, conversions, pricing).
+*   **Status:** Built (Vite/React shell).
+
+### Level 2: User Flow Engine
+*   **Role:** Supabase Authentication, Onboarding, Profile creation.
+*   **Status:** Built (Email/Password, Google OAuth).
+
+### Level 3: App-Level Engines
+*   **Role:** Global gamification, social logic, and AI layers overlaying the core experience.
+*   **Status:**
+    *   `Seeding Board (Streak Engine)`: Built.
+    *   `Performance Engine`: Built (Recharts telemetry).
+    *   `Global Leaderboard`: Built (Supabase joins).
+    *   `Interactive Leaf (Companion Engine)`: Built.
+    *   `Guidance & Schedule Builder (AI Engine)`: Built.
+
+### Level 4: Brain Gym (The Games Engine)
+*   **Role:** The isolated cognitive testing components.
+*   **Games:** SpeedMatch, TimeEstimator, DirectionDash, SymbolMatch, NumberCascade, ReactionTap, PatternPulse, WordWarp, CountFlow, FocusGrid.
+
+---
+
 ## 🎨 Design System & Colors
 * **Theme:** Calm, premium, spacious, soft glassmorphism.
 * **Palette:**

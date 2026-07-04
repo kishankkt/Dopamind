@@ -11,7 +11,12 @@ import SymbolMatch from './games/SymbolMatch';
 import DirectionDash from './games/DirectionDash';
 import TimeEstimator from './games/TimeEstimator';
 import { logGameSession } from './utils/gameEngine';
-import { LayoutDashboard, Gamepad2, Settings, LogOut, Sun, Moon, Zap, Grid, Hash, Palette, Search, MousePointerClick, ListOrdered, Copy, Move, Clock } from 'lucide-react';
+import { LayoutDashboard, Gamepad2, Settings, LogOut, Sun, Moon, Zap, Grid, Hash, Palette, Search, MousePointerClick, ListOrdered, Copy, Move, Clock, Flame, BrainCircuit } from 'lucide-react';
+import { SeedIcon, SproutIcon, HerbIcon, SageIcon, FlowerIcon } from './components/PlantIcons';
+import PerformanceChart from './components/PerformanceChart';
+import Leaderboard from './components/Leaderboard';
+import InteractiveLeaf from './components/InteractiveLeaf';
+import ScheduleBuilder from './components/ScheduleBuilder';
 import './App.css';
 
 // 🧮 Frequencies for the Ascending Pentatonic Scale
@@ -441,7 +446,7 @@ export default function App() {
       setStreak(newStreak);
       setLastPlayed(today);
       playAscendingArpeggio();
-      showToast("Focus Workout Logged! Streak plant watered. 🌱");
+      showToast("Focus Workout Logged! Streak plant watered.");
     });
   };
 
@@ -464,11 +469,11 @@ export default function App() {
   };
 
   const getPlantGraphic = () => {
-    if (streak === 0) return { emoji: "🪴", label: "Seed Pot Ready" };
-    if (streak <= 2) return { emoji: "🌱", label: "Seedling Sprout" };
-    if (streak <= 6) return { emoji: "🌿", label: "Thriving Herb" };
-    if (streak <= 29) return { emoji: "🪴", label: "Sage Shrub" };
-    return { emoji: "🌸", label: "Gold Flower Bloom!" };
+    if (streak === 0) return { icon: <SeedIcon size={48} />, label: "Seed Pot Ready" };
+    if (streak <= 2) return { icon: <SproutIcon size={48} />, label: "Seedling Sprout" };
+    if (streak <= 6) return { icon: <HerbIcon size={48} />, label: "Thriving Herb" };
+    if (streak <= 29) return { icon: <SageIcon size={48} />, label: "Sage Shrub" };
+    return { icon: <FlowerIcon size={48} />, label: "Gold Flower Bloom!" };
   };
 
   const gamesList = [
@@ -618,7 +623,19 @@ export default function App() {
                   }
                 }}
               >
-                <span><Gamepad2 size={20} /></span> Games Gym
+                <span><Gamepad2 size={20} /></span> Brain Gym
+              </button>
+              <button 
+                className={`menu-item ${activeTab === "guidance" ? "active" : ""}`}
+                onClick={() => {
+                  if (gameState === "playing") {
+                    setCustomConfirmOpen(true);
+                  } else {
+                    setActiveTab("guidance");
+                  }
+                }}
+              >
+                <span><BrainCircuit size={20} /></span> AI Guidance
               </button>
               <button 
                 className={`menu-item ${activeTab === "settings" ? "active" : ""}`}
@@ -663,8 +680,8 @@ export default function App() {
               <div className="dashboard-grid">
                 <div className="glass-panel streak-card">
                   <h2>Daily Streak Progress</h2>
-                  <div className="streak-status-badge">
-                    🔥 {streak} {streak === 1 ? "Day Streak" : "Days Streak"}
+                  <div className="streak-status-badge" style={{display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center'}}>
+                    <Flame size={18} style={{color: '#f97316'}} /> {streak} {streak === 1 ? "Day Streak" : "Days Streak"}
                   </div>
                   <p className="streak-details">
                     {streak > 0 
@@ -679,12 +696,21 @@ export default function App() {
                 <div className="glass-panel plant-visualizer-card">
                   <h2>Streak Plant Stage</h2>
                   <div className="plant-wrapper">
-                    <div className="plant-icon-main animate-wiggle">
-                      {plant.emoji}
+                    <div className="plant-icon-main animate-wiggle" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                      {plant.icon}
                     </div>
-                    <div className="plant-pot-base">🏺</div>
+                    <div className="plant-pot-base" style={{width: '50px', height: '30px', background: 'var(--color-emerald-deep)', borderRadius: '4px 4px 16px 16px', borderTop: '6px solid var(--color-emerald-base)', marginTop: '-10px', zIndex: 1}}></div>
                   </div>
                   <p className="plant-label">Current: <strong>{plant.label}</strong></p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '24px' }}>
+                <div style={{ flex: '2 1 500px', display: 'flex', flexDirection: 'column' }}>
+                  <PerformanceChart session={session} />
+                </div>
+                <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column' }}>
+                  <Leaderboard />
                 </div>
               </div>
             </>
@@ -693,8 +719,8 @@ export default function App() {
           {activeTab === "games" && gameState === "inactive" && (
             <>
               <header className="tab-header">
-                <h1>Focus Games Gym</h1>
-                <p>Choose a game loop to begin. Playing waters your streak plant.</p>
+                <h1>Brain Gym</h1>
+                <p>Choose a cognitive loop to begin. Playing waters your streak plant.</p>
               </header>
               <div className="games-inner-grid">
                 {gamesList.map(game => (
@@ -835,12 +861,19 @@ export default function App() {
               </div>
             </>
           )}
+          {activeTab === "guidance" && (
+            <ScheduleBuilder onStartGame={(game) => { setActiveTab("games"); startGame(game); }} />
+          )}
+
         </main>
+
+        {/* 🍃 Magical Interactive Leaf Companion */}
+        <InteractiveLeaf contextTrigger={toastMessage || (gameState === "playing" ? `Playing ${activeGameId}` : `Browsing ${activeTab}`)} />
 
         {/* 🔔 Toast Notification Banner */}
         {toastMessage && (
-          <div className="toast-notification-banner animate-pop">
-            🌿 {toastMessage}
+          <div className="toast-notification-banner animate-pop" style={{display: 'flex', alignItems: 'center'}}>
+            <SproutIcon size={20} style={{marginRight: '8px'}} /> {toastMessage}
           </div>
         )}
 

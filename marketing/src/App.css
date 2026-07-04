@@ -1388,3 +1388,82 @@
 .pattern-grid > div:active {
   transform: scale(0.95);
 }
+
+/* ==========================================
+   📱 MOBILE RESPONSIVENESS
+   ========================================== */
+@media (max-width: 768px) {
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .sidebar {
+    width: 100%;
+    padding: 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .sidebar-brand-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sidebar-logo .logo-text {
+    display: none; /* Hide brand text on mobile */
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .menu-item {
+    padding: 10px;
+    font-size: 0; /* Hides the raw text */
+  }
+
+  .menu-item span {
+    margin: 0;
+    font-size: 1rem; /* Keeps the icon visible */
+  }
+  
+  .sidebar-footer {
+    display: none; /* Hide email and theme toggle on mobile topbar */
+  }
+
+  .content-panel {
+    padding: 24px 16px;
+    width: 100%;
+  }
+
+  .dashboard-grid, .metrics-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .game-workspace {
+    padding: 24px 16px;
+  }
+
+  .card-stage-container {
+    height: auto;
+    min-height: 180px;
+  }
+
+  .action-buttons-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-action, .btn-primary, .btn-secondary {
+    width: 100%;
+  }
+}
