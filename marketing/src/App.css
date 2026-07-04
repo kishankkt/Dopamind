@@ -1355,3 +1355,33 @@
   color: var(--color-white);
   border-color: #ef4444;
 }
+
+/* ==========================================
+   🕹️ NEW MINI-GAMES STYLES
+   ========================================== */
+
+.options-grid button {
+  transition: all 0.2s ease;
+}
+
+.options-grid button:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.options-grid button:active {
+  transform: translateY(1px);
+}
+
+.pattern-grid > div {
+  transition: all 0.2s ease;
+}
+
+.pattern-grid > div:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: scale(1.05);
+}
+
+.pattern-grid > div:active {
+  transform: scale(0.95);
+}

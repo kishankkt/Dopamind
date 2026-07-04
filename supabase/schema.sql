@@ -60,3 +60,87 @@ create policy "Users can insert their own game history." on public.speedmatch_hi
 
 create policy "Users can view their own game history." on public.speedmatch_history
   for select using (auth.uid() = user_id);
+
+-- ==========================================
+-- 6. FocusGrid History Table
+-- ==========================================
+create table if not exists public.focusgrid_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  score integer not null,
+  attempts integer not null,
+  accuracy_percent integer not null,
+  avg_speed_seconds numeric(4,2) not null
+);
+
+alter table public.focusgrid_history enable row level security;
+
+create policy "Users can insert their own focusgrid history." on public.focusgrid_history
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can view their own focusgrid history." on public.focusgrid_history
+  for select using (auth.uid() = user_id);
+
+-- ==========================================
+-- 7. CountFlow History Table
+-- ==========================================
+create table if not exists public.countflow_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  score integer not null,
+  attempts integer not null,
+  accuracy_percent integer not null,
+  avg_speed_seconds numeric(4,2) not null
+);
+
+alter table public.countflow_history enable row level security;
+
+create policy "Users can insert their own countflow history." on public.countflow_history
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can view their own countflow history." on public.countflow_history
+  for select using (auth.uid() = user_id);
+
+-- ==========================================
+-- 8. WordWarp History Table
+-- ==========================================
+create table if not exists public.wordwarp_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  score integer not null,
+  attempts integer not null,
+  accuracy_percent integer not null,
+  avg_speed_seconds numeric(4,2) not null
+);
+
+alter table public.wordwarp_history enable row level security;
+
+create policy "Users can insert their own wordwarp history." on public.wordwarp_history
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can view their own wordwarp history." on public.wordwarp_history
+  for select using (auth.uid() = user_id);
+
+-- ==========================================
+-- 9. PatternPulse History Table
+-- ==========================================
+create table if not exists public.patternpulse_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  score integer not null,
+  attempts integer not null,
+  accuracy_percent integer not null,
+  avg_speed_seconds numeric(4,2) not null
+);
+
+alter table public.patternpulse_history enable row level security;
+
+create policy "Users can insert their own patternpulse history." on public.patternpulse_history
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can view their own patternpulse history." on public.patternpulse_history
+  for select using (auth.uid() = user_id);

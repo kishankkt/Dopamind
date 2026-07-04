@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import InteractiveGame from './InteractiveGame';
+import FocusGrid from './games/FocusGrid';
+import CountFlow from './games/CountFlow';
+import WordWarp from './games/WordWarp';
+import PatternPulse from './games/PatternPulse';
+import { logGameSession } from './utils/gameEngine';
 import './App.css';
 
 // 🧮 Frequencies for the Ascending Pentatonic Scale
@@ -48,6 +53,8 @@ export default function App() {
 
   // 🕹️ SpeedMatch Active Game States
   const [gameState, setGameState] = useState("inactive"); // 'inactive' | 'playing' | 'summary'
+  const [activeGameId, setActiveGameId] = useState("speedmatch");
+  const [summaryStats, setSummaryStats] = useState(null);
   const [currentShape, setCurrentShape] = useState("");
   const [previousShape, setPreviousShape] = useState("");
   const [gameScore, setGameScore] = useState(0);
@@ -253,6 +260,17 @@ export default function App() {
     });
   };
 
+  // Start game router
+  const startGame = (gameId) => {
+    setActiveGameId(gameId);
+    setSummaryStats(null);
+    if (gameId === 'speedmatch') {
+      startSpeedMatch();
+    } else {
+      setGameState("playing");
+    }
+  };
+
   // Start SpeedMatch game round
   const startSpeedMatch = () => {
     setGameState("playing");
@@ -400,64 +418,28 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gameState, currentShape, previousShape, consecutiveCorrect, consecutiveIncorrect, currentSpeedLimit, isFirstCard]);
 
-  // Clean end of 45-second round
+  // Generic Game Completion Handler
+  const handleGameComplete = async (gameId, stats) => {
+    setGameState("summary");
+    setSummaryStats(stats);
+    await logGameSession(gameId, stats, session, streak, lastPlayed, (newStreak, today) => {
+      setStreak(newStreak);
+      setLastPlayed(today);
+      playAscendingArpeggio();
+      showToast("Focus Workout Logged! Streak plant watered. 🌱");
+    });
+  };
+
+  // Clean end of 45-second round for SpeedMatch
   const endGameRound = async () => {
     if (cardTimerRef.current) clearInterval(cardTimerRef.current);
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
 
-    setGameState("summary");
-    
-    const today = new Date().toDateString();
     const avgSpeed = getAverageLatency();
     const accuracy = gameAttempts > 0 ? Math.round((gameScore / gameAttempts) * 100) : 0;
-
-    // 1. Sync game record in DB
-    if (session?.user) {
-      try {
-        await supabase
-          .from('speedmatch_history')
-          .insert({
-            user_id: session.user.id,
-            score: gameScore,
-            attempts: gameAttempts,
-            accuracy_percent: accuracy,
-            avg_speed_seconds: parseFloat(avgSpeed)
-          });
-      } catch (err) {
-        console.warn("Failed to log game score to database:", err);
-      }
-
-      // 2. Water / Update Streak plant
-      if (lastPlayed !== today) {
-        try {
-          const newStreak = streak + 1;
-          const { error } = await supabase
-            .from('profiles')
-            .update({
-              streak_count: newStreak,
-              last_played_at: new Date().toISOString(),
-              plant_stage: newStreak >= 30 ? 3 : newStreak >= 7 ? 2 : newStreak >= 3 ? 1 : 0
-            })
-            .eq('id', session.user.id);
-          if (!error) {
-            setStreak(newStreak);
-            setLastPlayed(today);
-            playAscendingArpeggio();
-            showToast("Focus Workout Logged! Streak plant watered. 🌱");
-          }
-        } catch (err) {
-          console.warn("Failed to water plant:", err);
-        }
-      }
-    } else {
-      // Offline fallback
-      if (lastPlayed !== today) {
-        const newStreak = streak + 1;
-        setStreak(newStreak);
-        setLastPlayed(today);
-        playAscendingArpeggio();
-      }
-    }
+    const stats = { score: gameScore, attempts: gameAttempts, accuracy_percent: accuracy, avg_speed_seconds: avgSpeed };
+    
+    await handleGameComplete('speedmatch', stats);
   };
 
   const getAverageLatency = () => {
@@ -662,20 +644,22 @@ export default function App() {
                 <p>Choose a game loop to begin. Playing waters your streak plant.</p>
               </header>
               <div className="games-inner-grid">
-                <div className="glass-panel play-game-card">
-                  <span className="game-icon">⚡</span>
-                  <h2>SpeedMatch</h2>
-                  <p>Determine if the shape matches the one shown before as speed adapts to your accuracy.</p>
-                  <button className="btn-primary" onClick={startSpeedMatch}>
-                    Start 45s Focus Workout
-                  </button>
-                </div>
+                {gamesList.map(game => (
+                  <div key={game.id} className="glass-panel play-game-card">
+                    <span className="game-icon">{game.icon}</span>
+                    <h2>{game.name}</h2>
+                    <p>{game.description}</p>
+                    <button className="btn-primary" onClick={() => startGame(game.id)}>
+                      Start {game.id === 'focusgrid' ? 'Game' : '45s'} Workout
+                    </button>
+                  </div>
+                ))}
               </div>
             </>
           )}
 
           {/* ⚡ Game Playing Mode */}
-          {gameState === "playing" && (
+          {gameState === "playing" && activeGameId === "speedmatch" && (
             <div className="game-workspace">
               <div className="game-hud">
                 <div className="hud-metric">
@@ -724,22 +708,27 @@ export default function App() {
             </div>
           )}
 
+          {gameState === "playing" && activeGameId === "focusgrid" && <FocusGrid onComplete={(s) => handleGameComplete("focusgrid", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "countflow" && <CountFlow onComplete={(s) => handleGameComplete("countflow", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "wordwarp" && <WordWarp onComplete={(s) => handleGameComplete("wordwarp", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+          {gameState === "playing" && activeGameId === "patternpulse" && <PatternPulse onComplete={(s) => handleGameComplete("patternpulse", s)} onQuit={() => {setGameState("inactive"); setActiveTab("games");}} />}
+
           {/* 📊 Game Summary Mode */}
-          {gameState === "summary" && (
+          {gameState === "summary" && summaryStats && (
             <div className="summary-workspace glass-panel">
               <h2>workout complete!</h2>
               <p>Your attention and response latency calculations are compiled below.</p>
               <div className="metrics-summary-grid">
                 <div className="summary-metric-item">
-                  <strong>{gameScore}</strong>
-                  <span>Correct Matches</span>
+                  <strong>{summaryStats.score}</strong>
+                  <span>{activeGameId === 'countflow' ? 'Equations Solved' : activeGameId === 'wordwarp' ? 'Words Matched' : 'Correct Matches'}</span>
                 </div>
                 <div className="summary-metric-item">
-                  <strong>{gameAttempts > 0 ? Math.round((gameScore / gameAttempts) * 100) : 0}%</strong>
+                  <strong>{summaryStats.accuracy_percent}%</strong>
                   <span>Total Accuracy</span>
                 </div>
                 <div className="summary-metric-item">
-                  <strong>{getAverageLatency()}s</strong>
+                  <strong>{summaryStats.avg_speed_seconds}s</strong>
                   <span>Avg Latency</span>
                 </div>
               </div>
@@ -747,7 +736,7 @@ export default function App() {
                 <button className="btn-primary" onClick={() => { setGameState("inactive"); setActiveTab("dashboard"); }}>
                   Return to Dashboard
                 </button>
-                <button className="btn-secondary" onClick={startSpeedMatch}>
+                <button className="btn-secondary" onClick={() => startGame(activeGameId)}>
                   Start Another Session
                 </button>
               </div>
