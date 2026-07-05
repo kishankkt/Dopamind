@@ -8,7 +8,7 @@
 // READ: .agents/skills/dopamind/SKILL.md → "Routing Architecture" for CTA rule
 
 import React, { useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import InteractiveGame from '@/app/games/core_engine/InteractiveGame';
 import { BrandConfig } from '@/config/brand';
@@ -212,9 +212,19 @@ export default function LandingPage() {
       <footer className="site-footer">
         <p>© 2026 {BrandConfig.name}. Built for positive focus habits.</p>
         <div className="footer-links">
-          <button className="legal-link-btn" onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy Policy</button>
+          <Link to="/vision" className="legal-link-btn">Vision</Link>
           <span className="dot-divider">•</span>
-          <button className="legal-link-btn" onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}>Terms of Service</button>
+          <Link to="/changelog" className="legal-link-btn">Changelog</Link>
+          <span className="dot-divider">•</span>
+          <Link to="/docs" className="legal-link-btn">Docs</Link>
+          <span className="dot-divider">•</span>
+          <Link to="/downloads" className="legal-link-btn">Downloads</Link>
+          <span className="dot-divider">•</span>
+          <Link to="/contact" className="legal-link-btn">Contact</Link>
+          <span className="dot-divider">•</span>
+          <button className="legal-link-btn" onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy</button>
+          <span className="dot-divider">•</span>
+          <button className="legal-link-btn" onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}>Terms</button>
         </div>
       </footer>
 
