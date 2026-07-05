@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { chatWithLeaf } from '../utils/aiEngine';
 import { X, Send } from 'lucide-react';
+import { BrandConfig } from '../config/brand';
 
 export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuide }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -112,7 +113,8 @@ export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuid
           {/* Header */}
           <div className="ai-chatbox-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.2rem' }}>🌿</span>
+              <span style={{ fontSize: '1.2rem', display: 'flex' }}><img src={BrandConfig.logoUrl} alt="Logo" width="20" height="20" /></span>
+
               <strong style={{ fontFamily: 'var(--font-header)', fontSize: '1.1rem' }}>
                 {isCompactMode ? 'Guide Notification' : 'DopaMind Guide'}
               </strong>
@@ -184,7 +186,8 @@ export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuid
         <span style={{ 
           transform: isOpen ? 'rotate(90deg)' : 'none'
         }}>
-          🌿
+          <img src={BrandConfig.logoUrl} alt="Logo" width="32" height="32" style={{ display: 'block' }} />
+
         </span>
       </div>
 

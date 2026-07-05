@@ -9,6 +9,11 @@
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
+  "plugins": {
+    "deep-link": {
+      "schemes": ["dopamind"]
+    }
+  },
   "app": {
     "windows": [
       {

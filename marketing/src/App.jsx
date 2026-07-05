@@ -25,6 +25,8 @@ import ScheduleBuilder from './components/ScheduleBuilder';
 import DashboardView from './views/DashboardView';
 import BrainGymView from './views/BrainGymView';
 import SettingsView from './views/SettingsView';
+import { BrandConfig } from './config/brand';
+
 import './App.css';
 
 // 🧮 Frequencies for the Ascending Pentatonic Scale
@@ -43,6 +45,8 @@ const PENTATONIC_SCALE = [
 
 const SHAPES = ["✦", "●", "▲", "■", "◆"];
 
+const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+
 export default function App() {
   // Navigation & User Info
   const [activeFaq, setActiveFaq] = useState(null);
@@ -54,6 +58,25 @@ export default function App() {
   const [leafTrigger, setLeafTrigger] = useState(null);
   const [aiWidgetSize, setAiWidgetSize] = useState(() => localStorage.getItem('dopamind_ai_widget_size') || 'standard');
   const [autoGuide, setAutoGuide] = useState(() => localStorage.getItem('dopamind_auto_guide') !== 'false');
+
+  useEffect(() => {
+    if (isDesktop) {
+      import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
+        onOpenUrl(async (urls) => {
+          for (const url of urls) {
+            if (url.includes('access_token') || url.includes('refresh_token')) {
+              // Extract the hash part from the deep link
+              const hashIndex = url.indexOf('#');
+              if (hashIndex !== -1) {
+                // Set the window hash so Supabase's built-in listener can pick it up
+                window.location.hash = url.substring(hashIndex);
+              }
+            }
+          }
+        }).catch(console.error);
+      }).catch(console.error);
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('dopamind_ai_widget_size', aiWidgetSize);
@@ -72,7 +95,7 @@ export default function App() {
   }, [darkMode]);
 
   // Authentication State
-  const [authOpen, setAuthOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(isDesktop);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authMode, setAuthMode] = useState("login"); // 'login' | 'signup'
@@ -218,13 +241,28 @@ export default function App() {
   const handleGoogleLogin = async () => {
     setAuthError("");
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
+      if (isDesktop) {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: 'dopamind://auth',
+            skipBrowserRedirect: true
+          }
+        });
+        if (error) throw error;
+        if (data?.url) {
+          await open(data.url);
         }
-      });
-      if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) throw error;
+      }
     } catch (err) {
       setAuthError(err.message || "Failed to start Google sign-in.");
     }
@@ -677,7 +715,10 @@ export default function App() {
                 <path d="M50 40 C60 34 68 28 68 22 C68 16 60 16 50 19" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                 <circle cx="50" cy="12" r="3.5" fill="#EAB308" />
               </svg>
-              <span className="logo-text">DopaMind</span>
+              <span className="logo-text" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                <img src={BrandConfig.logoUrl} alt="Logo" width="24" height="24" />
+                {BrandConfig.name}
+              </span>
             </div>
             <nav className="sidebar-menu">
               <button 
@@ -930,13 +971,89 @@ export default function App() {
   // ==========================================
   // RENDER VISITOR LANDING VIEW
   // ==========================================
+  
+  if (isDesktop) {
+    return (
+      <div className="landing-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
+        <div className="auth-modal glass-panel">
+          <h2>{authSuccessMessage ? "Account Created" : authMode === "login" ? "Welcome to DopaMind" : "Create Account"}</h2>
+          <p className="auth-sub">{authSuccessMessage ? "Verification email dispatched" : "Sign in to access your dashboard"}</p>
+
+          {authSuccessMessage ? (
+            <div className="auth-success-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: '24px' }}>
+              <span className="success-icon" style={{ fontSize: '3rem' }}>📧</span>
+              <p style={{ fontSize: '0.95rem', opacity: '0.8', lineHeight: '1.5', margin: '0' }}>{authSuccessMessage}</p>
+              <button className="btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '12px', fontWeight: '600' }} onClick={() => {
+                setAuthSuccessMessage("");
+                setAuthMode("login");
+              }}>
+                Go to Sign In
+              </button>
+            </div>
+          ) : (
+            <>
+              <form onSubmit={handleAuthSubmit} className="auth-form">
+                <label>Email Address</label>
+                <input 
+                  type="email" 
+                  required 
+                  placeholder="your@email.com" 
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                />
+
+                <label>Password</label>
+                <input 
+                  type="password" 
+                  required 
+                  placeholder="••••••••" 
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                />
+
+                {authError && <p className="auth-error-msg">⚠️ {authError}</p>}
+
+                <button type="submit" className="btn-primary auth-submit-btn" disabled={authLoading}>
+                  {authLoading ? "Processing..." : authMode === "login" ? "Sign In" : "Sign Up"}
+                </button>
+              </form>
+
+              <div className="auth-divider">
+                <span>OR</span>
+              </div>
+
+              <button className="google-auth-btn" onClick={handleGoogleLogin}>
+                <svg viewBox="0 0 48 48" width="20px" height="20px">
+                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.422-5.189l-6.196-5.239C29.21,35.154,26.685,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.196,5.239C36.983,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+
+              <p className="auth-toggle">
+                {authMode === "login" ? "New to DopaMind?" : "Already have an account?"}
+                <button onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
+                  {authMode === "login" ? "Create Account" : "Sign In"}
+                </button>
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="landing-container">
       {/* 🚀 Header */}
       <header className="site-header glass-panel">
         <div className="logo-area">
-          <Leaf className="logo-icon-svg" size={36} color="var(--color-emerald-base)" strokeWidth={2.5} />
-          <span className="logo-text">DopaMind</span>
+          <span className="logo-text" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <img src={BrandConfig.logoUrl} alt="Logo" width="24" height="24" />
+            {BrandConfig.name}
+          </span>
         </div>
         <nav className="header-nav">
           <a href="#games">Games</a>
@@ -952,7 +1069,7 @@ export default function App() {
           <div className="tag-badge">🪴 Positive Dopamine Gym</div>
           <h1>Doomscrolling is shrinking your focus.</h1>
           <p className="hero-lead">
-            Rebuild your attention span in 45 seconds a day. DopaMind uses short, gamified cognitive loops to train focus and spatial memory—free of social feed triggers.
+            {BrandConfig.description}
           </p>
           <div className="hero-stats">
             <div className="hero-stat-item">
@@ -968,9 +1085,17 @@ export default function App() {
               <span>Chromium Bloat</span>
             </div>
           </div>
-          <div className="hero-actions">
+          <div className="hero-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
             <button className="btn-primary" onClick={() => setAuthOpen(true)}>Access Gym Room</button>
-            <a href="#games" className="btn-secondary">Explore 5 Game Modes</a>
+            <a href="https://github.com/kishankkt/Dopamind/releases/latest/download/DopaMind_0.1.0_x64-setup.exe" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <span>💻</span> Download for Windows
+            </a>
+            <a href="https://github.com/kishankkt/Dopamind/releases/latest/download/DopaMind_0.1.0_x64.dmg" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', opacity: 0.8 }} title="Compiling in cloud, coming soon!">
+              <span>🍏</span> Download for Mac
+            </a>
+            <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.6, cursor: 'not-allowed' }} title="Mobile apps coming soon!">
+              <span>📱</span> iOS / Android
+            </button>
           </div>
         </div>
 
@@ -1048,7 +1173,7 @@ export default function App() {
 
       {/* 📇 Footer */}
       <footer className="site-footer">
-        <p>© 2026 DopaMind. Built for positive focus habits.</p>
+        <p>© 2026 {BrandConfig.name}. Built for positive focus habits.</p>
         <div className="footer-links">
           <button className="legal-link-btn" onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy Policy</button>
           <span className="dot-divider">•</span>

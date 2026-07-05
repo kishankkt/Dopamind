@@ -1,0 +1,12 @@
+node_modules/
+dist/
+marketing/node_modules/
+marketing/dist/
+marketing/src-tauri/target/
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+.git/
+.github/
+.gemini/
+.agents/
