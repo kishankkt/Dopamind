@@ -1729,3 +1729,13 @@
   }
 }
 
+  
+/* Markdown Styles */  
+.markdown-content { line-height: 1.6; color: var(--text-color); padding: 1rem; }  
+.markdown-content h1, .markdown-content h2, .markdown-content h3 { color: var(--text-heading); margin-top: 1.5em; margin-bottom: 0.5em; }  
+.markdown-content p { margin-bottom: 1em; }  
+.markdown-content ul, .markdown-content ol { margin-left: 1.5em; margin-bottom: 1em; }  
+.markdown-content code { background: rgba(0,0,0,0.1); padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; }  
+.dark .markdown-content code { background: rgba(255,255,255,0.1); }  
+.markdown-content pre { background: rgba(0,0,0,0.05); padding: 1em; border-radius: 8px; overflow-x: auto; }  
+.dark .markdown-content pre { background: rgba(255,255,255,0.05); } 

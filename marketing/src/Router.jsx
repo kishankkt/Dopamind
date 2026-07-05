@@ -24,7 +24,70 @@
 // READ: .agents/skills/dopamind/SKILL.md → "Routing Architecture" section for full route map.
 // INSTALL: npm install react-router-dom
 
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+
+import LandingPage from './pages/LandingPage';
+import VisionPage from './pages/VisionPage';
+import GamesLibraryPage from './pages/GamesLibraryPage';
+import DownloadsPage from './pages/DownloadsPage';
+import BlogPage from './pages/BlogPage';
+import ChangelogPage from './pages/ChangelogPage';
+import ContactPage from './pages/ContactPage';
+import DocsPage from './pages/DocsPage';
+
+// The App component will act as the authenticated shell
+import App from './App';
+
+const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+
 export default function Router() {
-  // TODO: Implement BrowserRouter with all routes above
-  return null;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route 
+          path="/" 
+          element={isDesktop ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
+        />
+        <Route path="/vision" element={<VisionPage />} />
+        <Route path="/play" element={<GamesLibraryPage />} />
+        <Route path="/play/:gameId" element={<GamesLibraryPage />} />
+        <Route path="/downloads" element={<DownloadsPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/changelog" element={<ChangelogPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/docs" element={<DocsPage />} />
+
+        {/* Protected Routes rendered within the App shell */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <App />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/gym" 
+          element={
+            <ProtectedRoute>
+              <App />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <App />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
