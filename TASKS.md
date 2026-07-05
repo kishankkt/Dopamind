@@ -1,98 +1,42 @@
-# DopaMind v2.0 — Task List for AI Agent
+# DopaMind — Follower Task List (Restructuring & Phase 2)
 
-READ FIRST: `.agents/skills/dopamind/SKILL.md` — this is your bible. Every decision is documented there.
+READ FIRST: `C:\Users\PREMIUM\.gemini\config\skills\leader-follower\SKILL.md` — this is your constitution. Every decision is documented there.
+READ SECOND: `C:\Users\PREMIUM\Desktop\Agentic-Proejcts\DopaMind\.agents\skills\dopamind\SKILL.md` — for project-specific constraints.
 
-## Phase 1: Install Dependencies
-```bash
-cd marketing && npm install react-router-dom react-markdown remark-gfm
-```
+## Phase 1: Structural Reorganization
 
-## Phase 2: Core Router (Do This First)
+### Task 1.1: Execute Restructure Script
+- Run `node "C:\Users\PREMIUM\.gemini\antigravity-ide\brain\726234de-e142-416a-90f7-d47e01323579\scratch\restructure.js"` from the `marketing` directory.
+- This will move all files from the monolithic `src/pages`, `src/views`, `src/components` into `src/website` and `src/app`.
 
-### Task 2.1: Implement `src/Router.jsx`
-- Read the comments in `src/Router.jsx` for exact route map
-- Use `BrowserRouter`, `Routes`, `Route` from react-router-dom
-- Wrap `/dashboard`, `/gym`, `/settings` with `<ProtectedRoute>`
-- Add desktop detection: if `window.__TAURI_INTERNALS__`, redirect `/` → `/dashboard`
+### Task 1.2: Fix Imports
+- The automated move will break all relative imports across the project.
+- You must go through `Router.jsx`, `AppShell.jsx` (formerly App.jsx), and all pages/components to fix their import paths.
+- Ensure `npm run build` in the `marketing` folder succeeds with zero errors before moving to Phase 2.
 
-### Task 2.2: Implement `src/components/ProtectedRoute.jsx`
-- Read comments in file. Check `supabase.auth.getSession()`
-- No session → `<Navigate to="/" />` + trigger auth modal via URL param
+## Phase 2: Trial & Username Routing (User Features)
 
-### Task 2.3: Update `src/main.jsx`
-- Replace `<App />` with `<Router />`
-- Keep existing CSS imports
+### Task 2.1: Update `marketing/src/Router.jsx`
+- Add a new route: `<Route path="/:username" element={<AppShell />} />`
+- Add a new route: `<Route path="/trial/:fingerprint" element={<AppShell />} />`
+- Ensure these are added below specific routes (like `/pricing`) so they don't override them.
 
-### Task 2.4: Update `vite.config.js`
-- Add SPA fallback for Vite dev server (all routes serve index.html)
+### Task 2.2: Implement Trial & Username Logic in `AppShell.jsx`
+- Open `marketing/src/app/core/auth/AppShell.jsx` (the new location).
+- Import `useParams` from `react-router-dom`.
+- Extract `username` and `fingerprint`.
+- If `fingerprint` exists, bypass the Supabase Auth check and set a mock session: `{ user: { id: fingerprint, email: "Trial Guest", isTrial: true } }`.
+- If `username` exists, fetch the user profile for that username (or handle the display logic for that user's public dashboard).
 
-## Phase 3: Extract Pages from App.jsx
+## WHEN COMPLETE
 
-### Task 3.1: Implement `src/pages/LandingPage.jsx`
-- Read comments in file. Extract visitor landing JSX from `App.jsx` lines ~1048-1180
-- Change CTA button text from "Access Gym Room" to "Enter Brain Gym"
-- Keep download buttons, hero, games grid, streak section, FAQ, footer
+Output this block:
 
-### Task 3.2: Keep `App.jsx` as the authenticated app shell only
-- App.jsx should only contain: sidebar, dashboard, brain gym, settings, game engine
-- Remove the visitor landing return block (moved to LandingPage.jsx)
-- App.jsx is rendered at `/dashboard`, `/gym`, `/settings` routes
+---FOLLOWER REPORT---
+Tasks completed: [list numbers]
+Files modified: [list modified files]
+Issues encountered: [describe, or "none"]
 
-## Phase 4: Implement MarkdownRenderer
-
-### Task 4.1: Implement `src/components/MarkdownRenderer.jsx`
-- Read comments in file. Use react-markdown + remark-gfm
-- Add CSS class `markdown-content` for typography styling
-- Add basic markdown CSS to `App.css` (headings, lists, code blocks, tables)
-
-## Phase 5: Build New Pages (Each reads its own comments)
-
-### Task 5.1: `src/pages/VisionPage.jsx`
-- Read comments in file. Load `content/pages/vision.md` and render with MarkdownRenderer
-
-### Task 5.2: Write `content/pages/vision.md`
-- Read the HTML comment instructions inside the file for structure
-- Read SKILL.md → "Vision & Brand Narrative" for tone and content
-
-### Task 5.3: `src/pages/DownloadsPage.jsx`
-- Read comments in file. Auto-detect OS, show download grid for all platforms
-- GitHub Release URLs: `https://github.com/kishankkt/Dopamind/releases/latest/download/FILENAME`
-
-### Task 5.4: `src/pages/GamesLibraryPage.jsx`
-- Read comments in file. Category tabs + game cards. NO auth required.
-- Categories from SKILL.md: Quick Reflexes, Remember & Recall, Stay Sharp, Think & Solve, Word Power, Sort & Prioritize
-
-### Task 5.5: `src/pages/BlogPage.jsx`
-- Read comments in file. List blog posts, render individual posts with MarkdownRenderer
-
-### Task 5.6: `src/pages/ChangelogPage.jsx`
-- Read comments in file. Render version history from `content/changelog/`
-
-### Task 5.7: `src/pages/ContactPage.jsx`
-- Read comments in file. Contact form + support info
-
-### Task 5.8: `src/pages/DocsPage.jsx`
-- Read comments in file. Sidebar nav + markdown doc renderer
-
-## Phase 6: Write Markdown Content
-
-### Task 6.1: `content/pages/vision.md` — Full vision/mission page (read comments in file)
-### Task 6.2: `content/blog/2026-07-05-welcome.md` — Launch blog post (read comments in file)
-### Task 6.3: `content/changelog/v0.1.0.md` — Release notes (read comments in file)
-### Task 6.4: `content/docs/getting-started.md` — Dev setup guide (read comments in file)
-### Task 6.5: `content/docs/game-sdk.md` — Game SDK docs (read SKILL.md → Game API Contract)
-### Task 6.6: `content/legal/privacy-policy.md` — Extract from App.jsx lines ~1276-1293
-### Task 6.7: `content/legal/terms-of-service.md` — Extract from App.jsx lines ~1296-1313
-
-## Phase 7: Vercel SPA Config
-
-### Task 7.1: Update `vercel.json` to handle SPA routing
-- Add rewrites: all routes → `/index.html`
-
-## RULES
-- Read SKILL.md before writing ANY code
-- Read the comments at the top of each file before implementing
-- Vanilla CSS only. No Tailwind. No styled-components.
-- Max 12 npm dependencies total (check package.json)
-- Use `BrandConfig` from `src/config/brand.js` for all brand text
-- Dark/light theme must work on every new page
+→ Paste this to your Leader model:
+"Verify follower work. Restructuring complete and imports fixed. Phase 2 features added. Check for regressions via npm run build."
+---END FOLLOWER REPORT---

@@ -1,0 +1,111 @@
+.pricing-page {
+  padding: 4rem 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.pricing-header h1 {
+  font-family: var(--font-heading);
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.pricing-header p {
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 3rem;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  align-items: center;
+}
+
+.pricing-card {
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-5px);
+}
+
+.pricing-card h2 {
+  font-family: var(--font-heading);
+  color: var(--color-text-primary);
+  margin-bottom: 1rem;
+}
+
+.pricing-price {
+  margin-bottom: 1rem;
+}
+
+.pricing-price .currency {
+  font-size: 1.5rem;
+  vertical-align: top;
+  margin-right: 2px;
+}
+
+.pricing-price .amount {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--color-emerald-base);
+}
+
+.pricing-price .period {
+  color: var(--color-text-secondary);
+}
+
+.pricing-desc {
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+}
+
+.pricing-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+  text-align: left;
+}
+
+.pricing-features li {
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.pricing-card button {
+  margin-top: auto;
+  width: 100%;
+}
+
+.pro-card {
+  border: 2px solid var(--color-emerald-base);
+  transform: scale(1.05);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.pro-card:hover {
+  transform: scale(1.05) translateY(-5px);
+}
+
+.pro-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-emerald-base);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

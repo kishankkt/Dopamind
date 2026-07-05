@@ -1,5 +1,0 @@
-{
-  "buildCommand": "cd marketing && npm run build",
-  "outputDirectory": "marketing/dist",
-  "installCommand": "cd marketing && npm install"
-}
