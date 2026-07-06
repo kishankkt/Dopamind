@@ -10,7 +10,8 @@ export default function SettingsView({
   aiWidgetSize, 
   setAiWidgetSize, 
   autoGuide, 
-  setAutoGuide 
+  setAutoGuide,
+  onUpdateUsername
 }) {
   const [notifications, setNotifications] = useState(true);
   const [sound, setSound] = useState(true);
@@ -19,19 +20,53 @@ export default function SettingsView({
 
   const [profileUsername, setProfileUsername] = useState("");
   const [editUsername, setEditUsername] = useState("");
+  const [editFullName, setEditFullName] = useState("");
   const [usernameStatus, setUsernameStatus] = useState(null);
   const [updatingUsername, setUpdatingUsername] = useState(false);
+  const [updatingFullName, setUpdatingFullName] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletionTimer, setDeletionTimer] = useState(null);
 
   useEffect(() => {
     async function loadProfile() {
-      const { data } = await supabase.from('profiles').select('username').eq('id', session.user.id).single();
+      const { data } = await supabase.from('profiles').select('username, full_name').eq('id', session.user.id).single();
       if (data) {
         setProfileUsername(data.username);
         setEditUsername(data.username);
+        setEditFullName(data.full_name || "");
       }
     }
     if (session?.user?.id) loadProfile();
   }, [session]);
+
+  useEffect(() => {
+    if (deletionTimer === null) return;
+    
+    if (deletionTimer <= 0) {
+      setDeletionTimer(null);
+      setIsDeleting(true);
+      (async () => {
+        try {
+          const { error } = await supabase.rpc('delete_user');
+          if (error) throw error;
+          
+          await supabase.auth.signOut();
+          window.location.href = '/';
+        } catch (err) {
+          alert("Deletion failed: " + err.message);
+          setIsDeleting(false);
+        }
+      })();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setDeletionTimer(prev => (prev === null ? null : prev - 1));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [deletionTimer]);
 
   useEffect(() => {
     if (!editUsername || editUsername === profileUsername) {
@@ -52,18 +87,47 @@ export default function SettingsView({
     return () => clearTimeout(delayDebounceFn);
   }, [editUsername, profileUsername]);
 
+  if (!session) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <div style={{ color: 'var(--color-emerald-base)', fontWeight: 600 }}>Loading settings...</div>
+      </div>
+    );
+  }
+
   const handleUpdateUsername = async () => {
     if (usernameStatus !== 'available' || !editUsername) return;
     setUpdatingUsername(true);
     try {
-      const { error } = await supabase.from('profiles').update({ username: editUsername }).eq('id', session.user.id);
+      const { error } = await supabase.from('profiles').upsert({ 
+        id: session.user.id, 
+        username: editUsername 
+      });
       if (error) throw error;
       setProfileUsername(editUsername);
+      if (onUpdateUsername) onUpdateUsername(editUsername);
       showToast("Username updated successfully!");
     } catch (err) {
       alert("Error updating username: " + err.message);
     } finally {
       setUpdatingUsername(false);
+    }
+  };
+
+  const handleUpdateFullName = async () => {
+    if (!editFullName.trim()) return;
+    setUpdatingFullName(true);
+    try {
+      const { error } = await supabase.from('profiles').upsert({ 
+        id: session.user.id, 
+        full_name: editFullName.trim()
+      });
+      if (error) throw error;
+      showToast("Full name updated successfully!");
+    } catch (err) {
+      showToast("Error updating full name: " + err.message);
+    } finally {
+      setUpdatingFullName(false);
     }
   };
 
@@ -95,8 +159,6 @@ export default function SettingsView({
   };
 
   const handleDeleteAccount = async () => {
-    // In a real app, this would call a secure edge function to delete the user.
-    // For now, we sign them out to simulate the effect.
     await supabase.auth.signOut();
     window.location.href = '/';
   };
@@ -118,7 +180,7 @@ export default function SettingsView({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', background: 'var(--color-emerald-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2.5rem', fontWeight: 'bold', overflow: 'hidden' }}>
-                {session.user.email.charAt(0).toUpperCase()}
+                {(session?.user?.email || 'G').charAt(0).toUpperCase()}
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -129,13 +191,37 @@ export default function SettingsView({
               </div>
               <div>
                 <p style={{ margin: 0, opacity: 0.7 }}>Account Email</p>
-                <strong style={{ fontSize: '1.2rem' }}>{session.user.email}</strong>
+                <strong style={{ fontSize: '1.2rem' }}>{session?.user?.email || 'Guest Session'}</strong>
                 <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem', opacity: 0.6 }}>{uploading ? 'Uploading...' : 'Click avatar to change'}</p>
               </div>
             </div>
             
-            <div style={{ marginTop: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  Full Name
+                  <span style={{color: 'gray', fontSize: '0.8rem', marginLeft: '8px'}}>Your display name</span>
+                </label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input 
+                    type="text" 
+                    value={editFullName}
+                    placeholder="E.g. John Doe"
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: '1rem' }} 
+                  />
+                  <button 
+                    className="btn-primary" 
+                    disabled={updatingFullName || !editFullName.trim()}
+                    onClick={handleUpdateFullName}
+                  >
+                    {updatingFullName ? 'Saving...' : 'Update'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                 Username
                 {usernameStatus === 'available' && <span style={{color: 'var(--color-emerald-base)', fontSize: '0.8rem', marginLeft: '8px'}}>Available ✅</span>}
                 {usernameStatus === 'taken' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Taken ❌</span>}
@@ -157,13 +243,14 @@ export default function SettingsView({
                   {updatingUsername ? 'Saving...' : 'Update'}
                 </button>
               </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Account Management Card */}
         <div className="glass-panel settings-card" style={{ padding: '32px' }}>
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 24px 0', color: 'var(--color-error)' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 24px 0', color: 'var(--color-error-coral)' }}>
             <UserX size={24} /> Account Management
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -177,8 +264,8 @@ export default function SettingsView({
                 style={{
                   padding: '10px 16px', borderRadius: '12px',
                   background: 'transparent',
-                  color: 'var(--color-error)',
-                  border: '1px solid var(--color-error)', cursor: 'pointer', fontWeight: 600
+                  color: 'var(--color-error-coral)',
+                  border: '1px solid var(--color-error-coral)', cursor: 'pointer', fontWeight: 600
                 }}
               >
                 Delete
@@ -205,8 +292,8 @@ export default function SettingsView({
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   padding: '10px 16px', borderRadius: '12px',
-                  background: darkMode ? 'var(--color-emerald-base)' : 'var(--color-white)',
-                  color: darkMode ? 'white' : 'var(--color-emerald-deep)',
+                  background: darkMode ? 'var(--color-emerald-base)' : 'var(--color-oat-light)',
+                  color: darkMode ? 'white' : 'var(--text)',
                   border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600
                 }}
               >
@@ -307,6 +394,96 @@ export default function SettingsView({
         </div>
 
       </div>
+
+      {showDeleteModal && (
+        <div className="auth-modal-overlay">
+          <div className="auth-modal animate-pop" style={{ maxWidth: '460px', background: 'var(--color-oat-light)', padding: '40px', borderRadius: '24px' }}>
+            <h2 style={{ color: 'var(--color-error-coral)', marginBottom: '16px', fontSize: '2rem' }}>Delete Account?</h2>
+            <p style={{ opacity: 0.8, fontSize: '0.95rem', marginBottom: '24px', lineHeight: '1.5', color: 'var(--text)' }}>
+              Your account will be immediately disabled and scheduled for <strong>permanent deletion in 30 days</strong>. 
+              <br /><br />
+              <em>Changed your mind?</em> Simply log back in within 30 days to automatically cancel the deletion and restore your streak progress.
+            </p>
+            <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-emerald-base)', marginBottom: '8px' }}>
+                Please type your username <strong style={{ color: 'var(--color-error-coral)' }}>{profileUsername || 'guest'}</strong> to confirm:
+              </label>
+              <input 
+                type="text" 
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={profileUsername || 'guest'}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  fontSize: '1rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                }}
+                style={{ flex: 1, padding: '12px', justifyContent: 'center' }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={() => {
+                  const targetUsername = (profileUsername || 'guest').trim().toLowerCase();
+                  if (deleteConfirmText.trim().toLowerCase() !== targetUsername) return;
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                  setDeletionTimer(10);
+                }}
+                style={{ 
+                  flex: 1, 
+                  padding: '12px', 
+                  justifyContent: 'center', 
+                  background: deleteConfirmText.trim().toLowerCase() === (profileUsername || 'guest').trim().toLowerCase() ? 'var(--color-error-coral)' : 'transparent',
+                  color: deleteConfirmText.trim().toLowerCase() === (profileUsername || 'guest').trim().toLowerCase() ? '#ffffff' : 'var(--color-error-coral)',
+                  border: deleteConfirmText.trim().toLowerCase() === (profileUsername || 'guest').trim().toLowerCase() ? 'none' : '1px solid var(--color-error-coral)',
+                  cursor: deleteConfirmText.trim().toLowerCase() === (profileUsername || 'guest').trim().toLowerCase() ? 'pointer' : 'not-allowed',
+                }}
+                disabled={deleteConfirmText.trim().toLowerCase() !== (profileUsername || 'guest').trim().toLowerCase() || isDeleting}
+              >
+                {isDeleting ? 'Processing...' : 'Schedule Deletion'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10-Second Deletion Countdown Toast */}
+      {deletionTimer !== null && (
+        <div className="toast-notification-banner animate-pop" style={{ display: 'flex', alignItems: 'center', gap: '15px', zIndex: 10000, background: 'var(--color-error-coral)', color: 'white' }}>
+          <div>
+            <strong>Account Deletion Imminent</strong><br/>
+            <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>Permanently scheduled for: {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleString()}. Signing out in {deletionTimer}s...</span>
+          </div>
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDeletionTimer(null);
+              showToast("Deletion cancelled.");
+            }}
+            style={{ padding: '8px 16px', borderRadius: '8px', background: 'white', color: 'var(--color-error-coral)', fontWeight: 'bold', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            Instant Recover
+          </button>
+        </div>
+      )}
     </>
   );
 }

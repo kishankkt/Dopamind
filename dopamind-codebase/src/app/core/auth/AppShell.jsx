@@ -51,11 +51,13 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   const [lastPlayed, setLastPlayed] = useState(null);
   const [leafTrigger, setLeafTrigger] = useState(0);
   const [profileUsername, setProfileUsername] = useState(null);
+  const [profileFullName, setProfileFullName] = useState(null);
 
   // Settings State
   const [aiWidgetSize, setAiWidgetSize] = useState('standard');
   const [autoGuide, setAutoGuide] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   // Modals & UI
   const [authOpen, setAuthOpen] = useState(false);
@@ -64,6 +66,8 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   const [customConfirmTitle, setCustomConfirmTitle] = useState("");
   const [customConfirmMessage, setCustomConfirmMessage] = useState("");
   const [customConfirmAction, setCustomConfirmAction] = useState(null);
+  
+  const [pendingRecovery, setPendingRecovery] = useState(null);
 
   const cardTimerRef = useRef(null);
   const roundTimerRef = useRef(null);
@@ -71,19 +75,57 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   // 2. Fetch Profile State
   const fetchUserProfile = async (user) => {
     try {
+      console.log("Fetching profile for user:", user.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select('current_streak, last_played_at, username')
+        .select('streak_count, last_played_at, username, full_name, restored_at, deleted_at')
         .eq('id', user.id)
         .single();
+      
+      console.log("Profile Data:", data);
+      console.log("Profile Error:", error);
+
       if (error && error.code !== 'PGRST116') throw error;
       if (data) {
-        setStreak(data.current_streak || 0);
+        setStreak(data.streak_count || 0);
         setLastPlayed(data.last_played_at);
         setProfileUsername(data.username);
+        setProfileFullName(data.full_name || "");
+        
+        if (data.deleted_at) {
+          const searchParams = new URLSearchParams(window.location.search);
+          if (searchParams.get('recover') === 'true') {
+            await supabase.from('profiles').update({ deleted_at: null, restored_at: new Date().toISOString() }).eq('id', user.id);
+            setPendingRecovery(null);
+            showToast("Welcome back! Your account has been securely recovered.");
+            navigate(`/${data.username}/${activeTab}`, { replace: true });
+            return;
+          }
+
+          const deleteTime = new Date(data.deleted_at).getTime();
+          const daysPassed = Math.floor((Date.now() - deleteTime) / (1000 * 60 * 60 * 24));
+          const daysLeft = Math.max(0, 30 - daysPassed);
+          console.log("Setting pending recovery with daysLeft:", daysLeft);
+          setPendingRecovery({ daysLeft });
+          return; // Stop further processing until recovered
+        }
+        
+        if (data.restored_at) {
+          const restoredTime = new Date(data.restored_at).getTime();
+          const now = Date.now();
+          if (now - restoredTime < 5 * 60 * 1000) { // 5 minutes
+            showToast("Welcome back! Your account deletion has been cancelled.");
+          }
+        }
+        
+        if (data.username && username && data.username !== username && !fingerprint) {
+          navigate(`/${data.username}/${activeTab}`, { replace: true });
+        }
       }
     } catch (err) {
       console.warn("Failed to fetch profile stats:", err);
+    } finally {
+      setIsProfileLoading(false);
     }
   };
 
@@ -91,21 +133,28 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   useEffect(() => {
     if (fingerprint) {
       setSession({ user: { id: fingerprint, email: "Trial Guest", isTrial: true } });
+      setIsProfileLoading(false);
       return;
     }
 
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
-      if (currentSession?.user) fetchUserProfile(currentSession.user);
+      if (currentSession?.user) {
+        fetchUserProfile(currentSession.user);
+      } else {
+        setIsProfileLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
+        setIsProfileLoading(true);
         fetchUserProfile(newSession.user);
       } else {
         setStreak(0);
         setLastPlayed(null);
+        setIsProfileLoading(false);
       }
     });
 
@@ -269,7 +318,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
 
     switch (activeTab) {
       case "dashboard":
-        return <DashboardView streak={streak} onEnterGym={() => navigate(`${basePath}/braingym`)} session={session} profileUsername={profileUsername} />;
+        return <DashboardView streak={streak} onEnterGym={() => navigate(`${basePath}/braingym`)} session={session} profileUsername={profileUsername || username} />;
       case "games":
         return <BrainGymView onPlayGame={startSpecificGame} />;
       case "guidance":
@@ -286,11 +335,19 @@ export default function AppShell({ defaultTab = "dashboard" }) {
             setAutoGuide={setAutoGuide}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
+            profileUsername={profileUsername}
+            setProfileUsername={setProfileUsername}
+            profileFullName={profileFullName}
+            setProfileFullName={setProfileFullName}
             showToast={setToastMessage}
+            onUpdateUsername={(newUsername) => {
+              setProfileUsername(newUsername);
+              navigate(`/${newUsername}/settings`, { replace: true });
+            }}
           />
         );
       default:
-        return <DashboardView streak={streak} setActiveTab={setActiveTab} session={session} profileUsername={profileUsername} />;
+        return <DashboardView streak={streak} setActiveTab={setActiveTab} session={session} profileUsername={profileUsername || username} />;
     }
   };
 
@@ -303,61 +360,113 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     }
   }, [darkMode]);
 
+  if (isProfileLoading) {
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-emerald-light)', borderTopColor: 'var(--color-emerald-deep)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
-      <SidebarNavigation 
-        session={session}
-        profileUsername={profileUsername}
-        activeTab={activeTab}
-        basePath={basePath}
-        gameState={gameState}
-        activeGameId={activeGameId}
-        setGameState={setGameState}
-        setLeafTrigger={setLeafTrigger}
-        triggerConfirm={triggerConfirm}
-        cardTimerRef={cardTimerRef}
-        roundTimerRef={roundTimerRef}
-      />
+      {!pendingRecovery && (
+        <>
+          <SidebarNavigation 
+            session={session}
+            profileUsername={profileUsername || username}
+            activeTab={activeTab}
+            basePath={basePath}
+            gameState={gameState}
+            activeGameId={activeGameId}
+            setGameState={setGameState}
+            setLeafTrigger={setLeafTrigger}
+            triggerConfirm={triggerConfirm}
+            cardTimerRef={cardTimerRef}
+            roundTimerRef={roundTimerRef}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+          />
 
-      {/* Main Viewport */}
-      <main className="content-panel">
-        {renderContent()}
-      </main>
+          {/* Main Viewport */}
+          <main className="content-panel">
+            {renderContent()}
+          </main>
 
-      {/* Extracted Auth Modals */}
-      <AuthModals 
-        authOpen={authOpen} 
-        setAuthOpen={setAuthOpen} 
-        showToast={showToast} 
-        isDesktop={isDesktop} 
-      />
+          {/* Extracted Auth Modals */}
+          <AuthModals 
+            authOpen={authOpen} 
+            setAuthOpen={setAuthOpen} 
+            showToast={showToast} 
+            isDesktop={isDesktop} 
+          />
 
-      {/* Floating AI Guide */}
-      <InteractiveLeaf 
-        contextTrigger={leafTrigger} 
-        aiWidgetSize={aiWidgetSize} 
-        autoGuide={autoGuide} 
-      />
+          {/* Floating AI Guide */}
+          <InteractiveLeaf 
+            contextTrigger={leafTrigger} 
+            aiWidgetSize={aiWidgetSize} 
+            autoGuide={autoGuide} 
+          />
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="toast-notification-banner animate-pop">
-          🌿 {toastMessage}
-        </div>
+          {/* Toast Notification */}
+          {toastMessage && (
+            <div className="toast-notification-banner animate-pop">
+              🌿 {toastMessage}
+            </div>
+          )}
+
+          {/* Custom Global Confirm */}
+          {customConfirmOpen && (
+            <div className="custom-confirm-overlay" onClick={() => setCustomConfirmOpen(false)}>
+              <div className="custom-confirm-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+                <h3>{customConfirmTitle}</h3>
+                <p>{customConfirmMessage}</p>
+                <div className="confirm-btn-group">
+                  <button className="btn-secondary" onClick={() => setCustomConfirmOpen(false)}>Cancel</button>
+                  <button className="btn-danger" onClick={() => {
+                    if (customConfirmAction) customConfirmAction();
+                    setCustomConfirmOpen(false);
+                  }}>Confirm</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Custom Global Confirm */}
-      {customConfirmOpen && (
-        <div className="custom-confirm-overlay" onClick={() => setCustomConfirmOpen(false)}>
-          <div className="custom-confirm-modal glass-panel" onClick={(e) => e.stopPropagation()}>
-            <h3>{customConfirmTitle}</h3>
-            <p>{customConfirmMessage}</p>
-            <div className="confirm-btn-group">
-              <button className="btn-secondary" onClick={() => setCustomConfirmOpen(false)}>Cancel</button>
-              <button className="btn-danger" onClick={() => {
-                if (customConfirmAction) customConfirmAction();
-                setCustomConfirmOpen(false);
-              }}>Confirm</button>
+      {/* Account Recovery Prompt */}
+      {pendingRecovery && (
+        <div className="custom-confirm-overlay" style={{ zIndex: 9999 }}>
+          <div className="custom-confirm-modal glass-panel" style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <h2 style={{ color: 'var(--color-error-coral)', marginBottom: '16px' }}>Account Pending Deletion</h2>
+            <p style={{ opacity: 0.8, marginBottom: '24px', lineHeight: '1.5' }}>
+              Your account is currently scheduled for permanent deletion. You have <strong>{pendingRecovery.daysLeft} days</strong> out of 30 left to recover it.
+            </p>
+            <div className="confirm-btn-group" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={async () => {
+                const { error } = await supabase.auth.signInWithOtp({
+                  email: session.user.email,
+                  options: {
+                    shouldCreateUser: false,
+                    emailRedirectTo: `${window.location.origin}/dashboard?recover=true`
+                  }
+                });
+                if (error) {
+                  showToast("Failed to send email: " + error.message);
+                } else {
+                  showToast("Recovery email sent to " + session.user.email + ". Please click the link to restore your account.");
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                }
+              }}>
+                Send Recovery Email
+              </button>
+              <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/';
+              }}>
+                Sign Out (Keep Deleting)
+              </button>
             </div>
           </div>
         </div>

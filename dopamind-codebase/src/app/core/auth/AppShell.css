@@ -788,13 +788,13 @@
 }
 
 .sidebar {
-  background: var(--color-oat);
-  color: var(--color-emerald-deep);
+  background: hsl(145, 30%, 15%);
+  color: #ffffff;
   padding: 32px 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid var(--border-light);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -811,7 +811,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--color-emerald-deep);
+  color: #ffffff;
 }
 
 .sidebar-menu {
@@ -828,25 +828,23 @@
   background: none;
   border: none;
   border-radius: 12px;
-  color: var(--color-emerald-deep);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
-  opacity: 0.8;
 }
 
 .menu-item:hover,
 .menu-item.active {
-  background: rgba(52, 211, 153, 0.15);
-  color: var(--color-emerald-base);
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .sidebar-footer {
   font-size: 0.8rem;
-  opacity: 0.6;
+  color: rgba(255, 255, 255, 0.7);
   line-height: 1.4;
 }
 
@@ -1687,11 +1685,13 @@
   pointer-events: auto;
   cursor: pointer;
   border: 2px solid var(--color-emerald-base);
+  color: #ffffff;
 }
 
 .dark .ai-leaf-button {
   background: hsl(145, 25%, 12%);
   border-color: hsl(145, 60%, 45%);
+  color: #ffffff;
 }
 
 .ai-leaf-button span {

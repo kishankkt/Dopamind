@@ -29,7 +29,7 @@ export default function AuthModals({
         });
         if (error) throw error;
         setAuthOpen(false);
-        showToast("Welcome back! Dashboard synchronized.");
+        window.location.href = '/dashboard';
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: authEmail,
@@ -45,8 +45,7 @@ export default function AuthModals({
         if (data?.user && !data.session) {
           setAuthSuccessMessage("A verification link has been sent to " + authEmail + ". Please check your inbox and click the confirmation link to activate your account.");
         } else {
-          showToast("Registration successful! You are now logged in.");
-          setAuthOpen(false);
+          window.location.href = '/dashboard';
         }
       }
     } catch (err) {
@@ -80,6 +79,7 @@ export default function AuthModals({
           }
         });
         if (error) throw error;
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       setAuthError(err.message || "Failed to start Google sign-in.");

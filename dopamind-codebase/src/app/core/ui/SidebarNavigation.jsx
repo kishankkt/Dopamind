@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Gamepad2, Settings, BrainCircuit } from 'lucide-react';
 import { BrandConfig } from '@/config/brand';
 import LogoIcon from '@/shared/ui/LogoIcon';
+import { supabase } from '@/supabaseClient';
 
 export default function SidebarNavigation({ 
   session, 
@@ -15,9 +16,16 @@ export default function SidebarNavigation({
   setLeafTrigger,
   triggerConfirm,
   cardTimerRef,
-  roundTimerRef
+  roundTimerRef,
+  darkMode,
+  setDarkMode
 }) {
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   const handleNav = (tab, triggerMsg) => {
     if (gameState === "playing") {
@@ -71,8 +79,57 @@ export default function SidebarNavigation({
           </button>
         </nav>
       </div>
-      <div className="sidebar-footer">
-        <p>Logged in as: <br /><strong>{profileUsername ? `@${profileUsername}` : (session?.user?.email || "Guest")}</strong></p>
+      <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '16px', marginTop: '16px' }}>
+        <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem' }}>Logged in as: <br /><strong style={{ wordBreak: 'break-all' }}>{profileUsername ? `@${profileUsername}` : (session?.user?.email || "Guest")}</strong></p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button 
+            onClick={() => setDarkMode(!darkMode)} 
+            className="theme-toggle-btn"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              width: '100%',
+              padding: '10px 16px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              borderRadius: '12px',
+              color: 'var(--color-white)',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              transition: 'background 0.2s',
+              justifyContent: 'center'
+            }}
+          >
+            {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
+
+          {session?.user && (
+            <button 
+              onClick={handleLogout}
+              className="logout-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '10px 16px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                borderRadius: '12px',
+                color: '#f87171',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                transition: 'background 0.2s',
+                justifyContent: 'center'
+              }}
+            >
+              🚪 Sign Out
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );

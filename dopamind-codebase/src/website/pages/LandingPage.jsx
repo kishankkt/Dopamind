@@ -164,7 +164,7 @@ export default function LandingPage() {
           </div>
           <div className="hero-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
             <button className="btn-primary" onClick={() => setAuthOpen(true)}>Sign In to Play</button>
-            <button className="btn-secondary" onClick={() => navigate(`/trial/guest-${crypto.randomUUID().split('-')[0]}`)}>
+            <button className="btn-secondary" onClick={() => navigate(`/guest/${crypto.randomUUID().split('-')[0]}/dashboard`)}>
               Play as Guest
             </button>
             <Link to="/downloads" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>

@@ -114,7 +114,7 @@ export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuid
           {/* Header */}
           <div className="ai-chatbox-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.2rem', display: 'flex' }}><img src={BrandConfig.logoUrl} alt="Logo" width="20" height="20" /></span>
+              <span style={{ fontSize: '1.2rem', display: 'flex', color: 'white' }}><LogoIcon width={20} height={20} /></span>
 
               <strong style={{ fontFamily: 'var(--font-header)', fontSize: '1.1rem' }}>
                 {isCompactMode ? 'Guide Notification' : 'DopaMind Guide'}
