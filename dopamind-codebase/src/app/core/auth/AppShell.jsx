@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import { BrandConfig } from '@/config/brand';
+import LogoIcon from '@/shared/ui/LogoIcon';
+import InteractiveLeaf from '@/app/games/library/InteractiveLeaf';
 
 import AuthModals from './AuthModals';
 import SidebarNavigation from '../ui/SidebarNavigation';
@@ -10,15 +12,35 @@ import BrainGymView from '@/app/features/ai_spotting/BrainGymView';
 import SettingsView from '@/app/core/user/SettingsView';
 import ScheduleBuilder from '@/app/features/ai_scheduler/ScheduleBuilder';
 import SpeedMatch from '@/app/games/library/SpeedMatch';
+import ChromaShift from '@/app/games/library/ChromaShift';
+import CountFlow from '@/app/games/library/CountFlow';
+import DirectionDash from '@/app/games/library/DirectionDash';
+import EchoMap from '@/app/games/library/EchoMap';
+import FocusGrid from '@/app/games/library/FocusGrid';
+import GravitySort from '@/app/games/library/GravitySort';
+import NumberCascade from '@/app/games/library/NumberCascade';
+import PatternPulse from '@/app/games/library/PatternPulse';
+import PhaseLock from '@/app/games/library/PhaseLock';
+import ReactionTap from '@/app/games/library/ReactionTap';
+import SymbolMatch from '@/app/games/library/SymbolMatch';
+import TimeEstimator from '@/app/games/library/TimeEstimator';
+import WeightGuess from '@/app/games/library/WeightGuess';
+import WordWarp from '@/app/games/library/WordWarp';
 
 import './AppShell.css';
 
 const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
-export default function AppShell() {
+export default function AppShell({ defaultTab = "dashboard" }) {
   const { username, fingerprint } = useParams();
+  const navigate = useNavigate();
+  const basePath = username ? `/${username}` : (fingerprint ? `/guest/${fingerprint}` : '');
 
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
   const [session, setSession] = useState(null);
   
   // Game orchestration
@@ -28,6 +50,12 @@ export default function AppShell() {
   const [streak, setStreak] = useState(0);
   const [lastPlayed, setLastPlayed] = useState(null);
   const [leafTrigger, setLeafTrigger] = useState(0);
+  const [profileUsername, setProfileUsername] = useState(null);
+
+  // Settings State
+  const [aiWidgetSize, setAiWidgetSize] = useState('standard');
+  const [autoGuide, setAutoGuide] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   // Modals & UI
   const [authOpen, setAuthOpen] = useState(false);
@@ -40,26 +68,41 @@ export default function AppShell() {
   const cardTimerRef = useRef(null);
   const roundTimerRef = useRef(null);
 
+  // 2. Fetch Profile State
+  const fetchUserProfile = async (user) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('current_streak, last_played_at, username')
+        .eq('id', user.id)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      if (data) {
+        setStreak(data.current_streak || 0);
+        setLastPlayed(data.last_played_at);
+        setProfileUsername(data.username);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch profile stats:", err);
+    }
+  };
+
   // 1. Authentication Listener
   useEffect(() => {
     if (fingerprint) {
       setSession({ user: { id: fingerprint, email: "Trial Guest", isTrial: true } });
       return;
     }
-    if (username) {
-      setSession({ user: { id: username, email: `@${username}`, isPublic: true } });
-      return;
-    }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) fetchUserProfile(session.user);
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      if (currentSession?.user) fetchUserProfile(currentSession.user);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        fetchUserProfile(newSession.user);
       } else {
         setStreak(0);
         setLastPlayed(null);
@@ -71,24 +114,6 @@ export default function AppShell() {
     };
   }, [fingerprint, username]);
 
-  // 2. Fetch Profile State
-  const fetchUserProfile = async (user) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('current_streak, last_played_at')
-        .eq('id', user.id)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
-      if (data) {
-        setStreak(data.current_streak || 0);
-        setLastPlayed(data.last_played_at);
-      }
-    } catch (err) {
-      console.warn("Failed to fetch profile stats:", err);
-    }
-  };
-
   // 3. Game Completion Handler
   const handleGameComplete = async (gameId, stats) => {
     setLastGameStats(stats);
@@ -97,6 +122,20 @@ export default function AppShell() {
 
     if (session?.user && !session.user.isTrial && !session.user.isPublic) {
       try {
+        // Log to game-specific table (e.g. speedmatch_history)
+        const specificTable = `${gameId.toLowerCase()}_history`;
+        await supabase.from(specificTable).insert([{
+          user_id: session.user.id,
+          score: stats.score,
+          accuracy_percent: stats.accuracy_percent,
+          avg_speed_seconds: stats.avg_speed_seconds
+        }]);
+      } catch (specificErr) {
+        console.warn(`Failed to log to specific table for ${gameId}:`, specificErr);
+      }
+
+      try {
+        // Log to global game_history table
         await supabase.from('game_history').insert([{
           user_id: session.user.id,
           game_id: gameId,
@@ -104,7 +143,11 @@ export default function AppShell() {
           accuracy_percent: stats.accuracy_percent,
           avg_speed_seconds: stats.avg_speed_seconds
         }]);
+      } catch (globalErr) {
+        console.warn(`Failed to log to global game_history:`, globalErr);
+      }
 
+      try {
         const today = new Date().toISOString().split('T')[0];
         let newStreak = streak;
 
@@ -156,18 +199,53 @@ export default function AppShell() {
   // 5. Main Render Router
   const renderContent = () => {
     if (gameState === "playing") {
-      if (activeGameId === "speedmatch") {
-        return <SpeedMatch isActive={true} onGameComplete={(gameId, stats) => handleGameComplete(gameId, stats)} />;
+      const gameProps = {
+        onComplete: (stats) => handleGameComplete(activeGameId, stats),
+        onQuit: () => setGameState("inactive")
+      };
+
+      switch (activeGameId) {
+        case "speedmatch":
+          return <SpeedMatch isActive={true} onGameComplete={(gameId, stats) => handleGameComplete(gameId, stats)} />;
+        case "chromashift":
+          return <ChromaShift {...gameProps} />;
+        case "countflow":
+          return <CountFlow {...gameProps} />;
+        case "directiondash":
+          return <DirectionDash {...gameProps} />;
+        case "echomap":
+          return <EchoMap {...gameProps} />;
+        case "focusgrid":
+          return <FocusGrid {...gameProps} />;
+        case "gravitysort":
+          return <GravitySort {...gameProps} />;
+        case "numbercascade":
+          return <NumberCascade {...gameProps} />;
+        case "patternpulse":
+          return <PatternPulse {...gameProps} />;
+        case "phaselock":
+          return <PhaseLock {...gameProps} />;
+        case "reactiontap":
+          return <ReactionTap {...gameProps} />;
+        case "symbolmatch":
+          return <SymbolMatch {...gameProps} />;
+        case "timeestimator":
+          return <TimeEstimator {...gameProps} />;
+        case "weightguess":
+          return <WeightGuess {...gameProps} />;
+        case "wordwarp":
+          return <WordWarp {...gameProps} />;
+        default:
+          return (
+            <div className="active-game-container">
+              <div className="game-stage">
+                <h2 style={{color: 'var(--text-color)'}}>{activeGameId} Engine</h2>
+                <p className="instruction-text">This game module is currently compiling.</p>
+                <button className="btn-secondary" onClick={() => setGameState("inactive")} style={{marginTop: '20px'}}>Exit Module</button>
+              </div>
+            </div>
+          );
       }
-      return (
-        <div className="active-game-container">
-          <div className="game-stage">
-            <h2 style={{color: 'var(--text-color)'}}>{activeGameId} Engine</h2>
-            <p className="instruction-text">This game module is currently compiling.</p>
-            <button className="btn-secondary" onClick={() => setGameState("inactive")} style={{marginTop: '20px'}}>Exit Module</button>
-          </div>
-        </div>
-      );
     }
     if (gameState === "summary") {
       return (
@@ -191,27 +269,49 @@ export default function AppShell() {
 
     switch (activeTab) {
       case "dashboard":
-        return <DashboardView streak={streak} leafTrigger={leafTrigger} onPlayGame={startSpecificGame} />;
+        return <DashboardView streak={streak} onEnterGym={() => navigate(`${basePath}/braingym`)} session={session} profileUsername={profileUsername} />;
       case "games":
         return <BrainGymView onPlayGame={startSpecificGame} />;
       case "guidance":
         return <ScheduleBuilder />;
       case "settings":
-        return <SettingsView session={session} isDesktop={isDesktop} onLoginClick={() => setAuthOpen(true)} />;
+        return (
+          <SettingsView 
+            session={session} 
+            isDesktop={isDesktop} 
+            onLoginClick={() => setAuthOpen(true)}
+            aiWidgetSize={aiWidgetSize}
+            setAiWidgetSize={setAiWidgetSize}
+            autoGuide={autoGuide}
+            setAutoGuide={setAutoGuide}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            showToast={setToastMessage}
+          />
+        );
       default:
-        return <DashboardView streak={streak} leafTrigger={leafTrigger} onPlayGame={startSpecificGame} />;
+        return <DashboardView streak={streak} setActiveTab={setActiveTab} session={session} profileUsername={profileUsername} />;
     }
   };
 
+  // 4. Dark Mode Effect
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   return (
-    <div className="app-layout">
-      {/* Sidebar Component */}
+    <div className="app-container">
       <SidebarNavigation 
         session={session}
+        profileUsername={profileUsername}
         activeTab={activeTab}
+        basePath={basePath}
         gameState={gameState}
         activeGameId={activeGameId}
-        setActiveTab={setActiveTab}
         setGameState={setGameState}
         setLeafTrigger={setLeafTrigger}
         triggerConfirm={triggerConfirm}
@@ -220,19 +320,8 @@ export default function AppShell() {
       />
 
       {/* Main Viewport */}
-      <main className="main-content">
-        <header className="mobile-header">
-          <div className="logo-area">
-            <span className="logo-text" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <img src={BrandConfig.logoUrl} alt="Logo" width="24" height="24" />
-              {BrandConfig.name}
-            </span>
-          </div>
-        </header>
-
-        <div className="scrollable-content">
-          {renderContent()}
-        </div>
+      <main className="content-panel">
+        {renderContent()}
       </main>
 
       {/* Extracted Auth Modals */}
@@ -241,6 +330,13 @@ export default function AppShell() {
         setAuthOpen={setAuthOpen} 
         showToast={showToast} 
         isDesktop={isDesktop} 
+      />
+
+      {/* Floating AI Guide */}
+      <InteractiveLeaf 
+        contextTrigger={leafTrigger} 
+        aiWidgetSize={aiWidgetSize} 
+        autoGuide={autoGuide} 
       />
 
       {/* Toast Notification */}

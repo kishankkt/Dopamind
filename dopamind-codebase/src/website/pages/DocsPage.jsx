@@ -10,6 +10,7 @@
 
 import React, { useEffect, useState } from 'react';
 import MarkdownRenderer from '@/shared/ui/MarkdownRenderer';
+import PublicLayout from '@/shared/ui/PublicLayout';
 
 export default function DocsPage() {
   const [docs, setDocs] = useState([]);
@@ -39,8 +40,9 @@ export default function DocsPage() {
   }, []);
 
   return (
-    <div className="page-container" style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '40px' }}>
-      {/* Sidebar Navigation */}
+    <PublicLayout>
+      <div className="page-container" style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '40px' }}>
+        {/* Sidebar Navigation */}
       <aside style={{ width: '250px', flexShrink: 0 }}>
         <h2 style={{ marginBottom: '24px', fontSize: '1.2rem' }}>Documentation</h2>
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -51,11 +53,12 @@ export default function DocsPage() {
               style={{
                 textAlign: 'left',
                 padding: '12px 16px',
-                background: activeDoc?.path === doc.path ? 'rgba(255,255,255,0.1)' : 'transparent',
+                background: activeDoc?.path === doc.path ? 'var(--brand-surface)' : 'transparent',
                 border: '1px solid',
-                borderColor: activeDoc?.path === doc.path ? 'rgba(255,255,255,0.2)' : 'transparent',
+                borderColor: activeDoc?.path === doc.path ? 'var(--brand-primary)' : 'transparent',
                 borderRadius: '8px',
-                color: 'white',
+                color: activeDoc?.path === doc.path ? 'var(--brand-primary)' : 'inherit',
+                fontWeight: activeDoc?.path === doc.path ? '600' : '400',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
@@ -73,7 +76,8 @@ export default function DocsPage() {
         ) : (
           <p>Loading documentation...</p>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </PublicLayout>
   );
 }

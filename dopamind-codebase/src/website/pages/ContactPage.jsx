@@ -8,6 +8,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '@/supabaseClient';
+import PublicLayout from '@/shared/ui/PublicLayout';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -30,10 +31,23 @@ export default function ContactPage() {
     }
   };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '8px',
+    border: '1px solid var(--brand-primary)',
+    background: 'transparent',
+    color: 'inherit',
+    fontFamily: 'inherit',
+    fontSize: '1rem',
+    outline: 'none'
+  };
+
   return (
-    <div className="page-container" style={{ maxWidth: '800px', margin: '40px auto', padding: '40px' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '10px' }}>Contact Support</h1>
-      <p style={{ textAlign: 'center', marginBottom: '40px', opacity: 0.8 }}>We usually respond within 24 hours.</p>
+    <PublicLayout>
+      <div className="page-container" style={{ maxWidth: '800px', margin: '40px auto', padding: '40px' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '10px' }}>Contact Support</h1>
+        <p style={{ textAlign: 'center', marginBottom: '40px', opacity: 0.8 }}>We usually respond within 24 hours.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
         <div className="glass-panel" style={{ padding: '32px' }}>
@@ -53,7 +67,7 @@ export default function ContactPage() {
                   required 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                  style={inputStyle}
                 />
               </div>
               <div>
@@ -63,7 +77,7 @@ export default function ContactPage() {
                   required 
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                  style={inputStyle}
                 />
               </div>
               <div>
@@ -73,7 +87,7 @@ export default function ContactPage() {
                   rows="5"
                   value={formData.message}
                   onChange={(e) => setFormData({...formData, message: e.target.value})}
-                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', resize: 'vertical' }}
+                  style={{ ...inputStyle, resize: 'vertical' }}
                 ></textarea>
               </div>
               <button type="submit" className="btn-primary" disabled={status === 'submitting'} style={{ marginTop: '8px' }}>
@@ -83,7 +97,7 @@ export default function ContactPage() {
           )}
         </div>
 
-        <div>
+        <div className="glass-panel" style={{ padding: '32px' }}>
           <h3>Quick Links</h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <li><a href="/faq" style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>→ Frequently Asked Questions</a></li>
@@ -96,7 +110,8 @@ export default function ContactPage() {
             <p style={{ opacity: 0.8, marginTop: '8px' }}>support@dopamind.app</p>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

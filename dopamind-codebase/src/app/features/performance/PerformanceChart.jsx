@@ -53,7 +53,21 @@ export default function PerformanceChart({ session }) {
         <select 
           value={activeGame} 
           onChange={(e) => setActiveGame(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-main)' }}
+          style={{ 
+            padding: '10px 36px 10px 16px', 
+            borderRadius: '12px', 
+            background: 'var(--brand-surface)', 
+            border: '1px solid var(--brand-primary)', 
+            color: 'var(--text-main)',
+            fontWeight: '600',
+            appearance: 'none',
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg fill="none" stroke="%2334d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6"/></svg>')`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 14px center',
+            backgroundSize: '16px',
+            outline: 'none',
+            cursor: 'pointer'
+          }}
         >
           {gameOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>

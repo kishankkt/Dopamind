@@ -35,12 +35,12 @@
 
 /* 🌙 True Dark Mode Tokens */
 .dark {
-  --color-oat: hsl(145, 10%, 10%);
-  --color-oat-light: hsl(145, 12%, 14%);
+  --color-oat: hsl(145, 20%, 8%);
+  --color-oat-light: hsl(145, 18%, 12%);
   --color-emerald-deep: hsl(120, 18%, 95%);
   --color-emerald-base: hsl(145, 60%, 45%);
-  --color-sage-light: hsl(145, 20%, 20%);
-  --color-sage-green: hsl(145, 25%, 30%);
+  --color-sage-light: hsl(145, 20%, 18%);
+  --color-sage-green: hsl(145, 22%, 24%);
   --border-light: rgba(255, 255, 255, 0.1);
   --shadow-subtle: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5);

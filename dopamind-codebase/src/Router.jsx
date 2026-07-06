@@ -26,6 +26,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase } from '@/supabaseClient';
 import ProtectedRoute from './app/core/auth/ProtectedRoute';
 
 import LandingPage from '@/website/pages/LandingPage';
@@ -38,10 +39,31 @@ import ContactPage from '@/website/pages/ContactPage';
 import DocsPage from '@/website/pages/DocsPage';
 import PricingPage from '@/website/pages/PricingPage';
 
-// The App component will act as the authenticated shell
 import AppShell from './app/core/auth/AppShell';
 
 const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+
+function DashboardRedirect() {
+  const [username, setUsername] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+         supabase.from('profiles').select('username').eq('id', session.user.id).single()
+         .then(({ data }) => {
+           setUsername(data?.username || 'user');
+           setLoading(false);
+         });
+      } else {
+         window.location.href = '/?auth=true';
+      }
+    });
+  }, []);
+  
+  if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading profile...</div>;
+  return <Navigate to={`/${username}/dashboard`} replace />;
+}
 
 export default function Router() {
   return (
@@ -61,36 +83,22 @@ export default function Router() {
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/pricing" element={<PricingPage />} />
 
-        {/* Phase 2: Trial & Username Routing */}
-        <Route path="/trial/:fingerprint" element={<AppShell />} />
-        <Route path="/:username" element={<AppShell />} />
+        {/* Guest Routing */}
+        <Route path="/guest/:fingerprint/dashboard" element={<AppShell defaultTab="dashboard" />} />
+        <Route path="/guest/:fingerprint/braingym" element={<AppShell defaultTab="games" />} />
 
-        {/* Protected Routes rendered within the App shell */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <AppShell />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/gym" 
-          element={
-            <ProtectedRoute>
-              <AppShell />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <AppShell />
-            </ProtectedRoute>
-          } 
-        />
+        {/* Redirects */}
+        <Route path="/dashboard" element={<DashboardRedirect />} />
         
+        {/* Username Routing (placed at bottom to prevent colliding with static paths) */}
+        <Route path="/:username/dashboard" element={<ProtectedRoute><AppShell defaultTab="dashboard" /></ProtectedRoute>} />
+        <Route path="/:username/braingym" element={<ProtectedRoute><AppShell defaultTab="games" /></ProtectedRoute>} />
+        <Route path="/:username/guidance" element={<ProtectedRoute><AppShell defaultTab="guidance" /></ProtectedRoute>} />
+        <Route path="/:username/settings" element={<ProtectedRoute><AppShell defaultTab="settings" /></ProtectedRoute>} />
+        
+        {/* Fallback for bare username */}
+        <Route path="/:username" element={<Navigate to="dashboard" replace />} />
+
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

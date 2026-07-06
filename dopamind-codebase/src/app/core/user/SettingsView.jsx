@@ -1,4 +1,4 @@
-// Added import for supabase
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { Shield, Settings, Sparkles, MessageSquare, Sun, Moon, Bell, Volume2, UserX } from 'lucide-react';
 
@@ -16,6 +16,56 @@ export default function SettingsView({
   const [sound, setSound] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [profileUsername, setProfileUsername] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState(null);
+  const [updatingUsername, setUpdatingUsername] = useState(false);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data } = await supabase.from('profiles').select('username').eq('id', session.user.id).single();
+      if (data) {
+        setProfileUsername(data.username);
+        setEditUsername(data.username);
+      }
+    }
+    if (session?.user?.id) loadProfile();
+  }, [session]);
+
+  useEffect(() => {
+    if (!editUsername || editUsername === profileUsername) {
+      setUsernameStatus(null);
+      return;
+    }
+    const checkUsername = async () => {
+      setUsernameStatus('checking');
+      if (!/^[a-zA-Z0-9_]+$/.test(editUsername)) {
+        setUsernameStatus('invalid');
+        return;
+      }
+      const { data, error } = await supabase.from('profiles').select('username').eq('username', editUsername).single();
+      if (error && error.code === 'PGRST116') setUsernameStatus('available');
+      else if (data) setUsernameStatus('taken');
+    };
+    const delayDebounceFn = setTimeout(() => checkUsername(), 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [editUsername, profileUsername]);
+
+  const handleUpdateUsername = async () => {
+    if (usernameStatus !== 'available' || !editUsername) return;
+    setUpdatingUsername(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ username: editUsername }).eq('id', session.user.id);
+      if (error) throw error;
+      setProfileUsername(editUsername);
+      showToast("Username updated successfully!");
+    } catch (err) {
+      alert("Error updating username: " + err.message);
+    } finally {
+      setUpdatingUsername(false);
+    }
+  };
 
   const uploadAvatar = async (event) => {
     try {
@@ -85,14 +135,27 @@ export default function SettingsView({
             </div>
             
             <div style={{ marginTop: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Username</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Username
+                {usernameStatus === 'available' && <span style={{color: 'var(--color-emerald-base)', fontSize: '0.8rem', marginLeft: '8px'}}>Available ✅</span>}
+                {usernameStatus === 'taken' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Taken ❌</span>}
+                {usernameStatus === 'invalid' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Letters/numbers/_ only</span>}
+                {usernameStatus === 'checking' && <span style={{color: 'gray', fontSize: '0.8rem', marginLeft: '8px'}}>Checking...</span>}
+              </label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <input 
                   type="text" 
-                  defaultValue={session.user.email.split('@')[0]} 
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: '1rem' }} 
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value.toLowerCase())}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid', borderColor: usernameStatus === 'taken' ? 'red' : usernameStatus === 'available' ? 'var(--color-emerald-base)' : 'var(--border)', background: 'transparent', color: 'var(--text)', fontSize: '1rem' }} 
                 />
-                <button className="btn-primary" onClick={() => showToast("Profile updated successfully!")}>Update</button>
+                <button 
+                  className="btn-primary" 
+                  disabled={updatingUsername || usernameStatus !== 'available'}
+                  onClick={handleUpdateUsername}
+                >
+                  {updatingUsername ? 'Saving...' : 'Update'}
+                </button>
               </div>
             </div>
           </div>

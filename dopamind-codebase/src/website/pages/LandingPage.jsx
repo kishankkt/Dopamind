@@ -7,11 +7,20 @@
 // READ: App.jsx current visitor landing section to extract the JSX
 // READ: .agents/skills/dopamind/SKILL.md → "Routing Architecture" for CTA rule
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import InteractiveGame from '@/app/games/core_engine/InteractiveGame';
 import { BrandConfig } from '@/config/brand';
+import PublicLayout from '@/shared/ui/PublicLayout';
+
+const Icons = {
+  Zap: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
+  Target: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
+  Hash: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>,
+  Palette: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>,
+  Puzzle: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.611c-.94.94-2.469.94-3.408 0L8.73 19.73a1.2 1.2 0 0 1-.289-.877l.524-3.473a2.369 2.369 0 0 0-1.224-2.493L4.256 11.23a1.59 1.59 0 0 1 0-2.833l3.484-1.657a2.369 2.369 0 0 0 1.224-2.493l-.524-3.473a1.2 1.2 0 0 1 .289-.877l1.568-1.568c.94-.94 2.468-.94 3.408 0l1.611 1.611c.229.23.555.338.877.289l3.473-.524a1.59 1.59 0 0 1 1.833 1.833l-.524 3.473Z"></path></svg>
+};
 
 const faqs = [
   { question: "Is DopaMind really free?", answer: "Yes. The core games are free, forever. No ads, no paywalls." },
@@ -31,10 +40,47 @@ export default function LandingPage() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authSuccessMessage, setAuthSuccessMessage] = useState("");
 
+  const [authFullName, setAuthFullName] = useState("");
+  const [authUsername, setAuthUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState(null); // 'available' | 'taken' | 'checking' | 'invalid'
+
   const [activeFaq, setActiveFaq] = useState(null);
-  const [legalModalOpen, setLegalModalOpen] = useState(false);
-  const [legalModalTab, setLegalModalTab] = useState("privacy");
   const [toastMessage, setToastMessage] = useState("");
+
+  // Check username availability
+  useEffect(() => {
+    if (authMode !== 'signup' || !authUsername) {
+      setUsernameStatus(null);
+      return;
+    }
+    
+    const checkUsername = async () => {
+      setUsernameStatus('checking');
+      if (!/^[a-zA-Z0-9_]+$/.test(authUsername)) {
+        setUsernameStatus('invalid');
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', authUsername)
+        .single();
+        
+      if (error && error.code === 'PGRST116') {
+        // No row found
+        setUsernameStatus('available');
+      } else if (data) {
+        setUsernameStatus('taken');
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      checkUsername();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [authUsername, authMode]);
 
   const toggleFaq = (index) => {
     setActiveFaq(activeFaq === index ? null : index);
@@ -47,7 +93,19 @@ export default function LandingPage() {
     setAuthSuccessMessage("");
     try {
       if (authMode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+        if (usernameStatus !== 'available') {
+          throw new Error("Please choose a valid and available username.");
+        }
+        const { data, error } = await supabase.auth.signUp({ 
+          email: authEmail, 
+          password: authPassword,
+          options: {
+            data: {
+              full_name: authFullName,
+              username: authUsername
+            }
+          }
+        });
         if (error) throw error;
         setAuthSuccessMessage("Check your email to verify your account!");
       } else {
@@ -72,30 +130,15 @@ export default function LandingPage() {
   };
 
   const gamesList = [
-    { id: 'speedmatch', name: "SpeedMatch", icon: "⚡", focus: "Quick Reflexes", description: "Match the current shape with the previous one. Trains processing speed." },
-    { id: 'focusgrid', name: "FocusGrid", icon: "🎯", focus: "Stay Sharp", description: "Find the numbers in sequence. Trains spatial memory." },
-    { id: 'countflow', name: "CountFlow", icon: "🔢", focus: "Think & Solve", description: "Keep a running tally. Trains mental agility." },
-    { id: 'wordwarp', name: "WordWarp", icon: "🎨", focus: "Word Power", description: "Match colors, not words. Trains cognitive flexibility." },
-    { id: 'patternpulse', name: "PatternPulse", icon: "🧩", focus: "Remember & Recall", description: "Remember the sequence. Trains working memory." },
+    { id: 'speedmatch', name: "SpeedMatch", icon: <Icons.Zap />, focus: "Quick Reflexes", description: "Match the current shape with the previous one. Trains processing speed." },
+    { id: 'focusgrid', name: "FocusGrid", icon: <Icons.Target />, focus: "Stay Sharp", description: "Find the numbers in sequence. Trains spatial memory." },
+    { id: 'countflow', name: "CountFlow", icon: <Icons.Hash />, focus: "Think & Solve", description: "Keep a running tally. Trains mental agility." },
+    { id: 'wordwarp', name: "WordWarp", icon: <Icons.Palette />, focus: "Word Power", description: "Match colors, not words. Trains cognitive flexibility." },
+    { id: 'patternpulse', name: "PatternPulse", icon: <Icons.Puzzle />, focus: "Remember & Recall", description: "Remember the sequence. Trains working memory." },
   ];
 
   return (
-    <div className="landing-container">
-      {/* 🚀 Header */}
-      <header className="site-header glass-panel">
-        <div className="logo-area">
-          <span className="logo-text" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <img src={BrandConfig.logoUrl} alt="Logo" width="24" height="24" />
-            {BrandConfig.name}
-          </span>
-        </div>
-        <nav className="header-nav">
-          <a href="#games">Games</a>
-          <a href="#streak">Daily Streak</a>
-          <a href="#faq">FAQ</a>
-          <button className="btn-secondary nav-cta" onClick={() => setAuthOpen(true)}>Log In / Sign Up</button>
-        </nav>
-      </header>
+    <PublicLayout onAuthClick={() => setAuthOpen(true)}>
 
       {/* ⚡ Hero Section */}
       <section className="hero-section">
@@ -124,15 +167,10 @@ export default function LandingPage() {
             <button className="btn-secondary" onClick={() => navigate(`/trial/guest-${crypto.randomUUID().split('-')[0]}`)}>
               Play as Guest
             </button>
-            <a href="https://github.com/kishankkt/Dopamind/releases/latest/download/DopaMind_0.1.0_x64-setup.exe" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-              <span>💻</span> Download for Windows
-            </a>
-            <a href="https://github.com/kishankkt/Dopamind/releases/latest/download/DopaMind_0.1.0_x64.dmg" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', opacity: 0.8 }} title="Compiling in cloud, coming soon!">
-              <span>🍏</span> Download for Mac
-            </a>
-            <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.6, cursor: 'not-allowed' }} title="Mobile apps coming soon!">
-              <span>📱</span> iOS / Android
-            </button>
+            <Link to="/downloads" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Download Desktop App</span>
+            </Link>
           </div>
         </div>
 
@@ -208,26 +246,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 📇 Footer */}
-      <footer className="site-footer">
-        <p>© 2026 {BrandConfig.name}. Built for positive focus habits.</p>
-        <div className="footer-links">
-          <Link to="/vision" className="legal-link-btn">Vision</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/changelog" className="legal-link-btn">Changelog</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/docs" className="legal-link-btn">Docs</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/downloads" className="legal-link-btn">Downloads</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/contact" className="legal-link-btn">Contact</Link>
-          <span className="dot-divider">•</span>
-          <button className="legal-link-btn" onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy</button>
-          <span className="dot-divider">•</span>
-          <button className="legal-link-btn" onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}>Terms</button>
-        </div>
-      </footer>
-
       {/* 🔑 Authentication Modal Overlay */}
       {authOpen && (
         <div className="auth-modal-overlay" onClick={() => setAuthOpen(false)}>
@@ -250,6 +268,35 @@ export default function LandingPage() {
             ) : (
               <>
                 <form onSubmit={handleAuthSubmit} className="auth-form">
+                  {authMode === "signup" && (
+                    <>
+                      <label>Full Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="John Doe" 
+                        value={authFullName}
+                        onChange={(e) => setAuthFullName(e.target.value)}
+                      />
+                      
+                      <label>
+                        Username 
+                        {usernameStatus === 'available' && <span style={{color: 'var(--color-emerald-base)', fontSize: '0.8rem', marginLeft: '8px'}}>Available ✅</span>}
+                        {usernameStatus === 'taken' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Taken ❌</span>}
+                        {usernameStatus === 'checking' && <span style={{color: 'gray', fontSize: '0.8rem', marginLeft: '8px'}}>Checking...</span>}
+                        {usernameStatus === 'invalid' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Letters/numbers/_ only</span>}
+                      </label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="johndoe123" 
+                        value={authUsername}
+                        onChange={(e) => setAuthUsername(e.target.value.toLowerCase())}
+                        style={{ borderColor: usernameStatus === 'taken' ? 'red' : usernameStatus === 'available' ? 'var(--color-emerald-base)' : 'inherit' }}
+                      />
+                    </>
+                  )}
+
                   <label>Email Address</label>
                   <input 
                     type="email" 
@@ -270,7 +317,11 @@ export default function LandingPage() {
 
                   {authError && <p className="auth-error-msg">⚠️ {authError}</p>}
 
-                  <button type="submit" className="btn-primary auth-submit-btn" disabled={authLoading}>
+                  <button 
+                    type="submit" 
+                    className="btn-primary auth-submit-btn" 
+                    disabled={authLoading || (authMode === 'signup' && usernameStatus !== 'available')}
+                  >
                     {authLoading ? "Processing..." : authMode === "login" ? "Sign In" : "Sign Up"}
                   </button>
                 </form>
@@ -301,78 +352,12 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* ⚖️ Legal Modal Overlay */}
-      {legalModalOpen && (
-        <div className="legal-modal-overlay" onClick={() => setLegalModalOpen(false)}>
-          <div className="legal-modal glass-panel" onClick={(e) => e.stopPropagation()}>
-            <button className="legal-close-btn" onClick={() => setLegalModalOpen(false)}>×</button>
-            <div className="legal-tab-headers">
-              <button 
-                className={`legal-tab ${legalModalTab === 'privacy' ? 'active' : ''}`} 
-                onClick={() => setLegalModalTab('privacy')}
-              >
-                Privacy Policy
-              </button>
-              <button 
-                className={`legal-tab ${legalModalTab === 'terms' ? 'active' : ''}`} 
-                onClick={() => setLegalModalTab('terms')}
-              >
-                Terms of Service
-              </button>
-            </div>
-            <div className="legal-document-content">
-              {legalModalTab === 'privacy' ? (
-                <div className="legal-text-panel">
-                  <h2>Privacy Policy</h2>
-                  <p><strong>Last Updated: July 4, 2026</strong></p>
-                  <p>
-                    Your privacy is our priority. DopaMind is a zero-bloat cognitive focus gym designed to respect your attention and your data.
-                  </p>
-                  <h3>1. Information Collection</h3>
-                  <p>
-                    We collect only the bare minimum credentials (email address) required to create and authenticate your account. We log game statistics (accuracy percentage, attempts, score, and reaction speed metrics) strictly to compute dashboard charts.
-                  </p>
-                  <h3>2. Trackers & Analytics</h3>
-                  <p>
-                    DopaMind does NOT use third-party advertising cookie trackers, Google Analytics pixels, or telemetry crawlers. 
-                  </p>
-                  <h3>3. Data Security</h3>
-                  <p>
-                    All profile information is stored on encrypted database clusters provided by Supabase. Access is governed strictly via secure PostgreSQL Row Level Security (RLS) rules.
-                  </p>
-                </div>
-              ) : (
-                <div className="legal-text-panel">
-                  <h2>Terms of Service</h2>
-                  <p><strong>Last Updated: July 4, 2026</strong></p>
-                  <p>
-                    By using the DopaMind platform, you agree to comply with and be bound by the following Terms of Service.
-                  </p>
-                  <h3>1. Attention Gym Service</h3>
-                  <p>
-                    DopaMind provides gamified cognitive focus training. Our games are meant as training aids and do not constitute clinical treatments or medical diagnoses for ADHD or processing delays.
-                  </p>
-                  <h3>2. User Accounts</h3>
-                  <p>
-                    You are solely responsible for keeping your login credentials confidential. Any activity executed under your profile remains your responsibility.
-                  </p>
-                  <h3>3. Termination</h3>
-                  <p>
-                    We reserve the right to restrict or terminate access to accounts attempting to exploit database security or inject malicious SQL commands.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 🔔 Toast Notification Banner */}
       {toastMessage && (
         <div className="toast-notification-banner animate-pop">
           🌿 {toastMessage}
         </div>
       )}
-    </div>
+    </PublicLayout>
   );
 }

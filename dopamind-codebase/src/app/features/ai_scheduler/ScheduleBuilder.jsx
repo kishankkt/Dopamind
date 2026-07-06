@@ -80,14 +80,14 @@ export default function ScheduleBuilder({ onStartGame }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: '12px' }}>
               <Zap size={18} /> Current Energy Level
             </label>
-            {renderChoiceButtons(["Low", "Medium", "High", "Caffeinated"], energyLevel, setEnergyLevel, '#f59e0b')}
+            {renderChoiceButtons(["Low", "Medium", "High", "Caffeinated"], energyLevel, setEnergyLevel, 'var(--color-emerald-base)')}
           </div>
 
           <div className="form-group">
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: '12px' }}>
               <Activity size={18} /> Cognitive State Today
             </label>
-            {renderChoiceButtons(["Brain Fog", "Distracted", "Sluggish", "Stressed", "Sharp"], cognitiveState, setCognitiveState, '#ec4899')}
+            {renderChoiceButtons(["Brain Fog", "Distracted", "Sluggish", "Stressed", "Sharp"], cognitiveState, setCognitiveState, 'var(--color-emerald-base)')}
           </div>
 
           <button className="btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', marginTop: '8px' }} onClick={() => setStep(2)}>
@@ -109,7 +109,7 @@ export default function ScheduleBuilder({ onStartGame }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: '12px' }}>
               <Clock size={18} /> Time Available Today
             </label>
-            {renderChoiceButtons(["5 mins", "10 mins", "15 mins", "20+ mins"], time, setTime, '#3b82f6')}
+            {renderChoiceButtons(["5 mins", "10 mins", "15 mins", "20+ mins"], time, setTime, 'var(--color-emerald-base)')}
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>

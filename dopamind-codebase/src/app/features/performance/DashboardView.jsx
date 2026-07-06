@@ -3,12 +3,20 @@ import { Flame } from 'lucide-react';
 import PerformanceChart from '@/app/features/performance/PerformanceChart';
 import Leaderboard from '@/app/features/performance/Leaderboard';
 
-export default function DashboardView({ streak, plant, setActiveTab, session }) {
+export default function DashboardView({ streak, onEnterGym, session, profileUsername }) {
+  const getPlantStage = (streakDays) => {
+    if (streakDays >= 30) return { icon: <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-accent-gold)"><path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7.5-6.3-4.8-6.3 4.8 2.3-7.5-6-4.6h7.6z"/></svg>, label: 'Golden Bloom' };
+    if (streakDays >= 7) return { icon: <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-emerald-base)"><path d="M12 22s8-4 8-12a8 8 0 00-16 0c0 8 8 12 8 12z"/></svg>, label: 'Sage Branch' };
+    if (streakDays >= 3) return { icon: <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-emerald-deep)"><path d="M12 22s5-3 5-9a5 5 0 00-10 0c0 6 5 9 5 9z"/></svg>, label: 'Sturdy Sprout' };
+    if (streakDays >= 1) return { icon: <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-emerald-light)"><circle cx="12" cy="18" r="4"/></svg>, label: 'Seedling' };
+    return { icon: <svg width="48" height="48" viewBox="0 0 24 24" fill="transparent" stroke="var(--border)"><circle cx="12" cy="18" r="4"/></svg>, label: 'Empty Pot (Play to Plant)' };
+  };
+  const plant = getPlantStage(streak || 0);
+
   return (
     <>
-      <header className="tab-header">
-        <h1>Welcome Back, Focus Gymnast</h1>
-        <p>Build your cognitive attention span using zero-bloat game exercises.</p>
+      <header className="tab-header" style={{ marginBottom: '24px' }}>
+        <h1>Welcome Back, {profileUsername || 'Guest'}</h1>
       </header>
 
       <div className="dashboard-grid">
@@ -22,7 +30,7 @@ export default function DashboardView({ streak, plant, setActiveTab, session }) 
               ? `Great job! Your plant is getting watered. Keep playing every day to make it bloom.`
               : "No streak active. Play a round in the focus gym to plant your first seed."}
           </p>
-          <button className="btn-primary" onClick={() => { setActiveTab("games"); }}>
+          <button className="btn-primary" onClick={onEnterGym}>
             Enter Gym
           </button>
         </div>

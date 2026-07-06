@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { chatWithLeaf } from '@/app/features/ai_spotting/aiEngine';
 import { X, Send } from 'lucide-react';
 import { BrandConfig } from '@/config/brand';
+import LogoIcon from '@/shared/ui/LogoIcon';
 
 export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuide }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,7 +64,7 @@ export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuid
 
   const handleContextTrigger = async (contextMsg) => {
     setIsTyping(true);
-    const contextPrompt = [...messages, { role: 'user', content: `[CONTEXT TRIGGER]: ${contextMsg}. Respond to this state change with extremely concise, direct guidance.` }];
+    const contextPrompt = [...messages.slice(-6), { role: 'user', content: `[CONTEXT TRIGGER]: ${contextMsg}. Respond to this state change with extremely concise, direct guidance.` }];
     const aiResponse = await chatWithLeaf(contextPrompt);
     setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
     setIsTyping(false);
@@ -79,7 +80,7 @@ export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuid
     setInput('');
     setIsTyping(true);
 
-    const aiResponse = await chatWithLeaf(newMessages);
+    const aiResponse = await chatWithLeaf(newMessages.slice(-6));
     setMessages([...newMessages, { role: 'assistant', content: aiResponse }]);
     setIsTyping(false);
   };
@@ -186,7 +187,7 @@ export default function InteractiveLeaf({ contextTrigger, aiWidgetSize, autoGuid
         <span style={{ 
           transform: isOpen ? 'rotate(90deg)' : 'none'
         }}>
-          <img src={BrandConfig.logoUrl} alt="Logo" width="32" height="32" style={{ display: 'block' }} />
+          <LogoIcon width={32} height={32} style={{ display: 'block' }} />
 
         </span>
       </div>

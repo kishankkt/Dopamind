@@ -25,6 +25,8 @@ async function fetchOpenRouter(messages, temperature = 0.7, max_tokens = 500) {
         messages: messages,
         temperature: temperature,
         max_tokens: max_tokens,
+        frequency_penalty: 0.6,
+        presence_penalty: 0.6,
       })
     });
 

@@ -11,10 +11,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 export default function MarkdownRenderer({ content }) {
+  // Strip YAML frontmatter before rendering
+  const processedContent = content?.replace(/^---[\s\S]*?---\n/, '') || '';
+
   return (
     <div className="markdown-content">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );
