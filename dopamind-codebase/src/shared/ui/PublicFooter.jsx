@@ -8,22 +8,52 @@ export default function PublicFooter() {
 
   return (
     <>
-      <footer className="site-footer">
-        <p>© 2026 {BrandConfig.name}. Built for positive focus habits.</p>
-        <div className="footer-links">
-          <Link to="/vision" className="legal-link-btn">Vision</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/changelog" className="legal-link-btn">Changelog</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/docs" className="legal-link-btn">Docs</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/downloads" className="legal-link-btn">Downloads</Link>
-          <span className="dot-divider">•</span>
-          <Link to="/contact" className="legal-link-btn">Contact</Link>
-          <span className="dot-divider">•</span>
-          <button className="legal-link-btn" onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy</button>
-          <span className="dot-divider">•</span>
-          <button className="legal-link-btn" onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}>Terms</button>
+      <footer className="site-footer glass-panel" style={{ padding: '60px 40px', marginTop: '40px' }}>
+        <div style={{ width: '100%', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
+          
+          {/* Brand & Copyright */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--color-emerald-deep)' }}>{BrandConfig.name}</h3>
+            <p style={{ opacity: 0.9, margin: 0, fontSize: '0.9rem', color: 'var(--color-emerald-deep)' }}>Built for positive focus habits.</p>
+            <div style={{ marginTop: 'auto', opacity: 0.8, fontSize: '0.85rem', color: 'var(--color-emerald-deep)' }}>
+              © 2026 {BrandConfig.name}. All rights reserved.
+            </div>
+          </div>
+
+          {/* Product */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h4 style={{ margin: 0, opacity: 0.9, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px', color: 'var(--color-emerald-deep)', fontWeight: '700' }}>Product</h4>
+            <Link to="/" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>The Gym</Link>
+            <Link to="/downloads" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Desktop Apps</Link>
+            <Link to="/pricing" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Pricing</Link>
+          </div>
+
+          {/* Resources */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h4 style={{ margin: 0, opacity: 0.9, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px', color: 'var(--color-emerald-deep)', fontWeight: '700' }}>Resources</h4>
+            <Link to="/vision" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Vision</Link>
+            <Link to="/research" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Research</Link>
+            <Link to="/collaboration" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Collaboration</Link>
+            <Link to="/docs" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Documentation</Link>
+            <Link to="/changelog" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Changelog</Link>
+          </div>
+
+          {/* Legal & Newsletter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h4 style={{ margin: 0, opacity: 0.9, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px', color: 'var(--color-emerald-deep)', fontWeight: '700' }}>Legal</h4>
+            <Link to="/contact" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Contact Support</Link>
+            <button className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }} onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}>Privacy Policy</button>
+            <button className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }} onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}>Terms of Service</button>
+            
+            <div style={{ marginTop: '20px' }}>
+              <strong style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', opacity: 0.8 }}>Join the Waitlist</strong>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="email" placeholder="Email address" style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', flex: 1, minWidth: '100px' }} />
+                <button className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }}>Join</button>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </footer>
 

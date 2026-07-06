@@ -19,33 +19,30 @@ const Icons = {
 const OS_DATA = {
   windows: {
     name: 'Windows', icon: <Icons.Windows />, archs: [
-      { id: 'x64', label: 'Windows x64 (.exe)', file: 'DopaMind_0.1.0_x64-setup.exe' },
-      { id: 'arm64', label: 'Windows ARM64 (.exe)', file: 'DopaMind_0.1.0_arm64-setup.exe' }
+      { id: 'x64', label: 'Windows x64 (.exe)', file: 'DopaMind_0.1.0_x64-setup.exe' }
     ]
   },
   mac: {
     name: 'macOS', icon: <Icons.Mac />, archs: [
-      { id: 'universal', label: 'Universal (.dmg)', file: 'DopaMind_0.1.0_universal.dmg' },
-      { id: 'intel', label: 'Intel (.dmg)', file: 'DopaMind_0.1.0_x64.dmg' },
-      { id: 'silicon', label: 'Apple Silicon (.dmg)', file: 'DopaMind_0.1.0_arm64.dmg' }
+      { id: 'silicon', label: 'Apple Silicon (.dmg)', file: 'DopaMind_0.1.0_aarch64.dmg' },
+      { id: 'intel', label: 'Intel (.dmg)', file: 'DopaMind_0.1.0_x64.dmg' }
     ]
   },
   linux: {
     name: 'Linux', icon: <Icons.Linux />, archs: [
-      { id: 'x64', label: 'Linux x64 (.AppImage)', file: 'DopaMind_0.1.0_amd64.AppImage' },
-      { id: 'arm64', label: 'Linux ARM64 (.AppImage)', file: 'DopaMind_0.1.0_arm64.AppImage' },
-      { id: 'deb', label: 'Debian/Ubuntu (.deb)', file: 'DopaMind_0.1.0_amd64.deb' }
+      { id: 'x64', label: 'Linux x64 (.AppImage)', file: 'dopamind_0.1.0_amd64.AppImage' },
+      { id: 'deb', label: 'Debian/Ubuntu (.deb)', file: 'dopamind_0.1.0_amd64.deb' }
     ]
   },
   ios: {
     name: 'iOS / iPadOS', icon: <Icons.Mac />, archs: [
-      { id: 'appstore', label: 'Apple App Store', link: 'https://apps.apple.com/' }
+      { id: 'appstore', label: 'Apple App Store', comingSoon: true }
     ]
   },
   android: {
     name: 'Android', icon: <Icons.Android />, archs: [
-      { id: 'playstore', label: 'Google Play Store', link: 'https://play.google.com/' },
-      { id: 'apk', label: 'Direct Download (.apk)', file: 'DopaMind_0.1.0.apk' }
+      { id: 'apk', label: 'Direct Download (.apk)', file: 'DopaMind_0.1.0.apk' },
+      { id: 'playstore', label: 'Google Play Store', comingSoon: true }
     ]
   }
 };
@@ -84,15 +81,25 @@ const OsCard = ({ data, recommended, defaultArch }) => {
         </select>
       </div>
 
-      <a 
-        href={currentArch.link || `https://github.com/kishankkt/Dopamind/releases/latest/download/${currentArch.file}`} 
-        className={recommended ? 'btn-primary' : 'btn-secondary'} 
-        style={{ display: 'block', textDecoration: 'none' }}
-        target={currentArch.link ? "_blank" : "_self"}
-        rel="noreferrer"
-      >
-        {currentArch.link ? 'Get App' : 'Download'}
-      </a>
+      {currentArch.comingSoon ? (
+        <button 
+          className="btn-secondary" 
+          style={{ display: 'block', width: '100%', cursor: 'not-allowed', opacity: 0.7 }}
+          disabled
+        >
+          Coming Soon
+        </button>
+      ) : (
+        <a 
+          href={currentArch.link || `https://github.com/kishankkt/Dopamind/releases/latest/download/${currentArch.file}`} 
+          className={recommended ? 'btn-primary' : 'btn-secondary'} 
+          style={{ display: 'block', textDecoration: 'none' }}
+          target={currentArch.link ? "_blank" : "_self"}
+          rel="noreferrer"
+        >
+          {currentArch.link ? 'Get App' : 'Download'}
+        </a>
+      )}
     </div>
   );
 };

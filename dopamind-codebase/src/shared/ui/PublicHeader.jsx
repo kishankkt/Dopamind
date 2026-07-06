@@ -43,16 +43,16 @@ export default function PublicHeader({ onAuthClick }) {
       </div>
       <nav className="header-nav">
         <Link to="/">The Gym</Link>
-        <Link to="/vision">Vision</Link>
-        <Link to="/docs">Docs</Link>
+        <button className="text-btn" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', fontWeight: '500' }} onClick={() => handleScroll('games')}>Games</button>
+        <Link to="/pricing">Pricing</Link>
         <Link to="/downloads">Downloads</Link>
         {session ? (
-          <Link to="/dashboard" className="btn-primary nav-cta" style={{ textDecoration: 'none' }}>
+          <Link to="/dashboard" className="btn-primary nav-cta" style={{ textDecoration: 'none', background: 'var(--color-emerald-base)', color: 'white', border: 'none' }}>
             Dashboard
           </Link>
         ) : (
-          <button className="btn-primary nav-cta" onClick={() => onAuthClick ? onAuthClick() : navigate('/?auth=true')}>
-            Log In / Sign Up
+          <button className="btn-primary nav-cta" style={{ background: 'var(--color-emerald-base)', color: 'white', border: 'none', padding: '10px 24px', fontWeight: 'bold' }} onClick={() => onAuthClick ? onAuthClick() : navigate('/?auth=true')}>
+            Get Started
           </button>
         )}
       </nav>

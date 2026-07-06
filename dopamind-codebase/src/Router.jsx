@@ -31,6 +31,8 @@ import ProtectedRoute from './app/core/auth/ProtectedRoute';
 
 import LandingPage from '@/website/pages/LandingPage';
 import VisionPage from '@/website/pages/VisionPage';
+import CollaborationPage from '@/website/pages/CollaborationPage';
+import ResearchPage from '@/website/pages/ResearchPage';
 import GamesLibraryPage from '@/website/pages/GamesLibraryPage';
 import DownloadsPage from '@/website/pages/DownloadsPage';
 import BlogPage from '@/website/pages/BlogPage';
@@ -74,6 +76,8 @@ export default function Router() {
           element={isDesktop ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
         />
         <Route path="/vision" element={<VisionPage />} />
+        <Route path="/research" element={<ResearchPage />} />
+        <Route path="/collaboration" element={<CollaborationPage />} />
         <Route path="/play" element={<GamesLibraryPage />} />
         <Route path="/play/:gameId" element={<GamesLibraryPage />} />
         <Route path="/downloads" element={<DownloadsPage />} />

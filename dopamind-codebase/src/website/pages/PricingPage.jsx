@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { BrandConfig } from '@/config/brand';
 import { supabase } from '@/supabaseClient';
 import './PricingPage.css';
+import PublicLayout from '@/shared/ui/PublicLayout';
 
 export default function PricingPage() {
   const [session, setSession] = useState(null);
@@ -47,7 +48,8 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="pricing-page">
+    <PublicLayout>
+      <div className="pricing-page">
       <div className="pricing-header">
         <h1>Invest in Your Focus</h1>
         <p>Join {BrandConfig.name} and rebuild your attention span.</p>
@@ -97,6 +99,7 @@ export default function PricingPage() {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </PublicLayout>
   );
 }
