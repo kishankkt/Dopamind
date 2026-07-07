@@ -95,6 +95,7 @@ export default function Router() {
         <Route path="/guest/:fingerprint/dashboard" element={<AppShell defaultTab="dashboard" />} />
         <Route path="/guest/:fingerprint/braingym" element={<AppShell defaultTab="games" />} />
         <Route path="/guest/:fingerprint/coaches" element={<AppShell defaultTab="coaches" />} />
+        <Route path="/guest/:fingerprint/sessions" element={<AppShell defaultTab="sessions" />} />
 
         {/* Redirects */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
@@ -103,6 +104,7 @@ export default function Router() {
         <Route path="/:username/dashboard" element={<ProtectedRoute><AppShell defaultTab="dashboard" /></ProtectedRoute>} />
         <Route path="/:username/braingym" element={<ProtectedRoute><AppShell defaultTab="games" /></ProtectedRoute>} />
         <Route path="/:username/coaches" element={<ProtectedRoute><AppShell defaultTab="coaches" /></ProtectedRoute>} />
+        <Route path="/:username/sessions" element={<ProtectedRoute><AppShell defaultTab="sessions" /></ProtectedRoute>} />
         <Route path="/:username/settings" element={<ProtectedRoute><AppShell defaultTab="settings" /></ProtectedRoute>} />
         
         {/* Fallback for bare username */}
