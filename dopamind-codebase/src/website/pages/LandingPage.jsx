@@ -291,45 +291,53 @@ export default function LandingPage() {
     <PublicLayout onAuthClick={() => setAuthOpen(true)}>
 
       {/* ⚡ Hero Section */}
-      <section className="hero-section" style={{ display: 'block', marginBottom: '40px' }}>
-        <div className="hero-info glass-panel" style={{ padding: '80px 40px', alignItems: 'center', textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
+      <section className="hero-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px', width: '100%' }}>
+        <div className="glass-panel" style={{ padding: '80px 40px', width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          
           <div className="tag-badge" style={{ marginBottom: '24px', fontWeight: 'bold' }}>🧠 The Brain Growth Platform</div>
           
-          <h1 style={{ fontSize: '3.5rem', lineHeight: '1.1', margin: '0 auto 24px auto', maxWidth: '750px', color: 'var(--color-emerald-deep)' }}>
+          <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', lineHeight: '1.1', margin: '0 auto 24px auto', maxWidth: '900px', color: 'var(--color-emerald-deep)', letterSpacing: '-1px' }}>
             Your Brain Dictates Your Reality.
           </h1>
           
-          <p className="hero-lead" style={{ fontSize: '1.25rem', maxWidth: '750px', margin: '0 auto 30px auto', lineHeight: '1.6', color: 'var(--text-primary)' }}>
-            <strong>Let's be extremely clear about what we do.</strong> DopaMind is a mental fitness platform designed to undo the damage of endless scrolling and rebuild your natural attention span.
+          <p className="hero-lead" style={{ fontSize: '1.35rem', maxWidth: '850px', margin: '0 auto 50px auto', lineHeight: '1.6', color: 'var(--text-primary)' }}>
+            <strong>What exactly do we do?</strong> DopaMind is a mental fitness platform designed to undo the damage of endless scrolling.<br /><br />
+            <strong>How do we help you?</strong> We rebuild your natural attention span by turning high-effort focus into a game.
           </p>
           
-          <div style={{ background: 'var(--color-oat)', padding: '32px', borderRadius: '16px', maxWidth: '750px', margin: '0 auto 40px auto', border: '1px solid var(--border-light)', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-              <span style={{ fontSize: '1.6rem', marginTop: '2px' }}>🧠</span>
-              <div>
-                <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', fontSize: '1.15rem', marginBottom: '4px' }}>The Hard Truth</strong>
-                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '1rem' }}>Nothing in this world will fix your attention span by default. Your brain dictates your life growth.</span>
-              </div>
-            </div>
+          <div style={{ background: 'var(--color-oat)', padding: '40px', borderRadius: '24px', width: '100%', margin: '0 auto 50px auto', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '40px', textAlign: 'left' }}>
             
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-              <span style={{ fontSize: '1.6rem', marginTop: '2px' }}>🛑</span>
-              <div>
-                <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', fontSize: '1.15rem', marginBottom: '4px' }}>Your Commitment</strong>
-                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '1rem' }}>If you are not committed, do not sign up. DopaMind is exclusively for those ready to take action.</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '40px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '2.5rem', lineHeight: '1' }}>🧠</span>
+                <strong style={{ color: 'var(--color-emerald-deep)', fontSize: '1.25rem' }}>The Hard Truth</strong>
+                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '1.05rem' }}>Nothing in this world will fix your attention span by default. Your brain dictates your life growth.</span>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '2.5rem', lineHeight: '1' }}>🛑</span>
+                <strong style={{ color: 'var(--color-emerald-deep)', fontSize: '1.25rem' }}>Your Commitment</strong>
+                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '1.05rem' }}>If you are not committed, do not sign up. DopaMind is exclusively for those ready to take action.</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '2.5rem', lineHeight: '1' }}>🌱</span>
+                <strong style={{ color: 'var(--color-emerald-deep)', fontSize: '1.25rem' }}>The Promise</strong>
+                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '1.05rem' }}>If you put in a small, active effort every day, DopaMind will rewire your focus and elevate your entire life.</span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-              <span style={{ fontSize: '1.6rem', marginTop: '2px' }}>🌱</span>
-              <div>
-                <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', fontSize: '1.15rem', marginBottom: '4px' }}>The Promise</strong>
-                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '1rem' }}>If you put in a small, active effort every day, DopaMind will rewire your focus and elevate your entire life.</span>
-              </div>
+            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '30px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', textAlign: 'center' }}>
+              <span style={{ fontSize: '2.5rem', lineHeight: '1' }}>🌍</span>
+              <strong style={{ color: 'var(--color-emerald-deep)', fontSize: '1.4rem' }}>Why We Exist</strong>
+              <span style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '1.1rem', maxWidth: '800px' }}>
+                We built DopaMind after analyzing <a href="/research" onClick={(e) => { e.preventDefault(); navigate('/research'); }} style={{ color: 'var(--color-emerald-base)', fontWeight: 'bold', textDecoration: 'underline' }}>Our Internal Research Paper</a>. This research proves the planet-level cognitive decay caused by short-form algorithms. We engineered the cure.
+              </span>
             </div>
+
           </div>
 
-          <button className="btn-primary" onClick={() => window.location.href = '/?auth=true'} style={{ fontSize: '1.2rem', padding: '18px 48px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 'bold' }}>
+          <button className="btn-primary" onClick={() => window.location.href = '/?auth=true'} style={{ fontSize: '1.3rem', padding: '20px 60px', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>
             I Am Committed ↗
           </button>
         </div>
