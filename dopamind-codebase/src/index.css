@@ -11,21 +11,21 @@
   --color-accent-gold: hsl(43, 85%, 60%);
   --color-error-coral: hsl(354, 70%, 65%);
   --color-white: #ffffff;
-  
+
   --font-header: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
-  
+
   --border-light: rgba(40, 77, 54, 0.08);
   --shadow-subtle: 0 8px 32px 0 rgba(40, 77, 54, 0.03);
   --shadow-card: 0 10px 25px -5px rgba(40, 77, 54, 0.08);
-  
+
   /* Layout configs */
   --sans: var(--font-body);
   --heading: var(--font-header);
   --text: var(--color-emerald-deep);
   --bg: var(--color-oat);
   --border: var(--border-light);
-  
+
   font: 16px/150% var(--sans);
   color: var(--text);
   background: var(--bg);
@@ -53,28 +53,59 @@ body {
   font-family: var(--font-body);
   color: var(--color-emerald-deep);
   -webkit-font-smoothing: antialiased;
+  
+  /* Global "Daali" (Branches) Watermark / Glow */
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 400 400' opacity='0.03'%3E%3Cpath d='M0,400 Q100,200 400,0' fill='none' stroke='%231b4332' stroke-width='4'/%3E%3Cpath d='M100,250 Q150,150 250,50' fill='none' stroke='%232d6a4f' stroke-width='3'/%3E%3Cpath d='M200,350 Q300,250 400,150' fill='none' stroke='%232d6a4f' stroke-width='3'/%3E%3Cpath d='M50,300 C30,280 20,290 30,310 C40,330 60,320 50,300' fill='%2340916c'/%3E%3Cpath d='M150,180 C130,160 120,170 130,190 C140,210 160,200 150,180' fill='%2352b788'/%3E%3Cpath d='M300,100 C280,80 270,90 280,110 C290,130 310,120 300,100' fill='%2374c69d'/%3E%3Cpath d='M250,280 C230,260 220,270 230,290 C240,310 260,300 250,280' fill='%2352b788'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 10% 10%, rgba(132, 204, 22, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(40, 77, 54, 0.06) 0%, transparent 50%);
+  background-position: center, top left, bottom right;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-size: 600px 600px, 100% 100%, 100% 100%;
+  background-attachment: fixed;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 /* Glassmorphism Styles */
 .glass-panel {
-  background: rgba(253, 251, 247, 0.6);
+  position: relative;
+  background-color: rgba(253, 251, 247, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-light);
   border-radius: 24px;
-  box-shadow: var(--shadow-subtle);
+  /* Soft glowing green center like the image */
+  box-shadow: inset 0 0 150px rgba(132, 204, 22, 0.08), 0 10px 40px -10px rgba(40, 77, 54, 0.1);
+  border: 1px solid rgba(132, 204, 22, 0.15);
+  
+  /* Corner Branches */
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cg transform='scale(-1, 1) translate(-150, 0)'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cg transform='scale(1, -1) translate(0, -150)'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cg transform='scale(-1, -1) translate(-150, -150)'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: top left, top right, bottom left, bottom right;
+  background-repeat: no-repeat;
+  background-size: 80px 80px;
+}
+
+/* Disable corner branches on Headers/Navs */
+header.glass-panel, .site-header.glass-panel, nav.glass-panel {
+  background-image: none !important;
 }
 
 .glass-card {
-  background: var(--color-oat-light);
-  border: 1px solid var(--border-light);
+  position: relative;
+  background-color: var(--color-oat-light);
   border-radius: 16px;
   box-shadow: var(--shadow-subtle);
+  border: 1px solid var(--border-light);
   transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+  /* Removed corner branches for sub-containers to maintain minimality */
 }
 
 .glass-card:hover {
@@ -136,20 +167,73 @@ body {
 
 /* Keyframes & Animations */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
 }
 
 @keyframes springPop {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.08); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes bounceSlow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.35s ease-in-out;
+}
+
+.animate-pop {
+  animation: springPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-bounce {
+  animation: bounceSlow 3s ease-in-out infinite;
+}
+
+@keyframes bounceSlow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .animate-shake {

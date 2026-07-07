@@ -5,8 +5,8 @@
 // ROUTES TO IMPLEMENT:
 //   /              → LandingPage (marketing, public)
 //   /vision        → VisionPage (why we exist, public)
-//   /play          → GamesLibraryPage (browse games by category, NO auth required)
-//   /play/:gameId  → Play a specific game (NO auth required, scores not saved)
+//   /brain-gym          → GamesLibraryPage (browse games by category, NO auth required)
+//   /brain-gym/:gameId  → Play a specific game (NO auth required, scores not saved)
 //   /downloads     → DownloadsPage (all platform downloads, public)
 //   /blog          → BlogPage (markdown-rendered posts, public)
 //   /changelog     → ChangelogPage (version history, public)
@@ -78,8 +78,8 @@ export default function Router() {
         <Route path="/vision" element={<VisionPage />} />
         <Route path="/research" element={<ResearchPage />} />
         <Route path="/collaboration" element={<CollaborationPage />} />
-        <Route path="/play" element={<GamesLibraryPage />} />
-        <Route path="/play/:gameId" element={<GamesLibraryPage />} />
+        <Route path="/brain-gym" element={<GamesLibraryPage />} />
+        <Route path="/brain-gym/:gameId" element={<GamesLibraryPage />} />
         <Route path="/downloads" element={<DownloadsPage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/changelog" element={<ChangelogPage />} />

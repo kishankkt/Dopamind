@@ -42,8 +42,7 @@ export default function PublicHeader({ onAuthClick }) {
         </Link>
       </div>
       <nav className="header-nav">
-        <Link to="/">The Gym</Link>
-        <button className="text-btn" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', fontWeight: '500' }} onClick={() => handleScroll('games')}>Games</button>
+        <Link to="/brain-gym" className="text-btn" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', fontWeight: '500', textDecoration: 'none' }}>Brain Gym</Link>
         <Link to="/pricing">Pricing</Link>
         <Link to="/downloads">Downloads</Link>
         {session ? (

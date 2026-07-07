@@ -23,7 +23,7 @@ export default function PublicFooter() {
           {/* Product */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h4 style={{ margin: 0, opacity: 0.9, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px', color: 'var(--color-emerald-deep)', fontWeight: '700' }}>Product</h4>
-            <Link to="/" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>The Gym</Link>
+            <Link to="/brain-gym" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Brain Gym</Link>
             <Link to="/downloads" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Desktop Apps</Link>
             <Link to="/pricing" className="legal-link-btn" style={{ textAlign: 'left', padding: 0 }}>Pricing</Link>
           </div>

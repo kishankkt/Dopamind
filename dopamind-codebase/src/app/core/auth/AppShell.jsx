@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import { BrandConfig } from '@/config/brand';
 import LogoIcon from '@/shared/ui/LogoIcon';
@@ -37,10 +37,16 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   const basePath = username ? `/${username}` : (fingerprint ? `/guest/${fingerprint}` : '');
 
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [searchParams] = useSearchParams();
+  const gameToPlay = searchParams.get('play');
 
   useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+    if (gameToPlay) {
+      setActiveTab("games");
+    } else {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab, gameToPlay]);
   const [session, setSession] = useState(null);
   
   // Game orchestration
@@ -58,6 +64,13 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   const [autoGuide, setAutoGuide] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  useEffect(() => {
+    if (gameToPlay) {
+      setGameState("playing");
+      setActiveGameId(gameToPlay);
+    }
+  }, [gameToPlay]);
 
   // Modals & UI
   const [authOpen, setAuthOpen] = useState(false);

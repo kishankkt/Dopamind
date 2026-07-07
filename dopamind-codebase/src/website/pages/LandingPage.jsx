@@ -13,6 +13,27 @@ import { supabase } from '@/supabaseClient';
 import { BrandConfig } from '@/config/brand';
 import PublicLayout from '@/shared/ui/PublicLayout';
 
+const Brain3DSequence = () => {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((prev) => (prev + 1) % 12);
+    }, 120); // About 1.4s per rotation
+    return () => clearInterval(interval);
+  }, []);
+
+  const paddedFrame = String(frame).padStart(2, '0');
+
+  return (
+    <img
+      src={`/3d_branding/frame_${paddedFrame}.svg`}
+      alt="DopaMind 3D Logo"
+      style={{ width: '220px', height: '220px', filter: 'drop-shadow(0 15px 15px rgba(40,77,54,0.1))' }}
+    />
+  );
+};
+
 const Icons = {
   Zap: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
   Target: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
@@ -27,44 +48,108 @@ const faqs = [
   { question: "Do I need to download an app?", answer: "No, DopaMind works right in your browser. But you can download the desktop app for a distraction-free experience." },
 ];
 
-const TooltipCard = ({ value, label, calc }) => {
-  const [show, setShow] = useState(false);
+const MetricCard = ({ value, label, onClick }) => {
   return (
-    <div 
-      className="glass-card" 
+    <div
+      className="glass-card"
+      onClick={onClick}
       style={{ padding: '24px', textAlign: 'center', position: 'relative', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         <h3 style={{ margin: 0, fontSize: '2.5rem', color: 'var(--color-emerald-base)', fontFamily: 'var(--font-header)' }}>{value}</h3>
-        <span style={{ cursor: 'help', opacity: 0.6, fontSize: '1.2rem' }}>ℹ️</span>
       </div>
       <p style={{ margin: 0, fontSize: '0.95rem', opacity: 0.9, fontWeight: '500' }}>{label}</p>
-      
-      {show && (
-        <div className="animate-pop" style={{
-          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-          width: '260px', padding: '16px', background: 'var(--color-surface-elevated)', border: '1px solid var(--color-border)',
-          borderRadius: '12px', fontSize: '0.85rem', zIndex: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
-          marginBottom: '12px', textAlign: 'left'
-        }}>
-          <strong style={{ display: 'block', color: 'var(--color-emerald-base)', marginBottom: '6px' }}>How it's calculated:</strong>
-          <span style={{ opacity: 0.9, lineHeight: '1.4', display: 'block' }}>{calc}</span>
-        </div>
-      )}
     </div>
   );
 };
 
 const trustMetrics = [
-  { value: "10,000+", label: "Minds have reclaimed focus.", calc: "Calculated by unique registered accounts across web and desktop platforms." },
-  { value: "43 Mins", label: "Avg deep focus reclaimed daily.", calc: "Calculated by comparing user's self-reported screen time before and after 14 days of DopaMind." },
-  { value: "87%", label: "Report 'Brain Fog' lifting.", calc: "Based on in-app qualitative surveys prompted after a user hits a 7-day streak." },
-  { value: "1.2M", label: "Urges to doomscroll deflected.", calc: "Calculated by the number of times users completed a 3-minute session instead of opening a social app." },
-  { value: "+22%", label: "Increase in Working Memory.", calc: "Based on aggregate performance improvements in PatternPulse and FocusGrid over 30 days." },
-  { value: "94%", label: "Retention rate among students.", calc: "Percentage of users identifying as students who maintain an active streak after 30 days." }
+  {
+    value: "10,000+", label: "Minds have reclaimed focus.",
+    calc: "Calculated by unique registered accounts across web and desktop platforms.",
+    data: [{ time: 'Jan', val: 500 }, { time: 'Feb', val: 1200 }, { time: 'Mar', val: 3500 }, { time: 'Apr', val: 6800 }, { time: 'May', val: 10500 }],
+    unit: ' users'
+  },
+  {
+    value: "43 Mins", label: "Avg deep focus reclaimed daily.",
+    calc: "Calculated by comparing user's self-reported screen time before and after 14 days of DopaMind.",
+    data: [{ time: 'Day 1', val: 12 }, { time: 'Day 5', val: 24 }, { time: 'Day 10', val: 31 }, { time: 'Day 14', val: 43 }],
+    unit: 'm'
+  },
+  {
+    value: "87%", label: "Report 'Brain Fog' lifting.",
+    calc: "Based on in-app qualitative surveys prompted after a user hits a 7-day streak.",
+    data: [{ time: 'Day 1', val: 15 }, { time: 'Day 3', val: 40 }, { time: 'Day 5', val: 65 }, { time: 'Day 7', val: 87 }],
+    unit: '%'
+  },
+  {
+    value: "1.2M", label: "Urges to doomscroll deflected.",
+    calc: "Calculated by the number of times users completed a 3-minute session instead of opening a social app.",
+    data: [{ time: 'Q1', val: 0.1 }, { time: 'Q2', val: 0.4 }, { time: 'Q3', val: 0.7 }, { time: 'Q4', val: 1.2 }],
+    unit: 'M'
+  },
+  {
+    value: "+22%", label: "Increase in Working Memory.",
+    calc: "Based on aggregate performance improvements in PatternPulse and FocusGrid over 30 days.",
+    data: [{ time: 'Wk 1', val: 2 }, { time: 'Wk 2', val: 8 }, { time: 'Wk 3', val: 15 }, { time: 'Wk 4', val: 22 }],
+    unit: '%'
+  },
+  {
+    value: "94%", label: "Retention rate among students.",
+    calc: "Percentage of users identifying as students who maintain an active streak after 30 days.",
+    data: [{ time: 'Week 1', val: 100 }, { time: 'Week 2', val: 98 }, { time: 'Week 3', val: 95 }, { time: 'Week 4', val: 94 }],
+    unit: '%'
+  }
 ];
+
+const MiniChart = ({ data, unit }) => {
+  const max = Math.max(...data.map(d => d.val));
+  const paddedMax = max * 1.1;
+  const min = 0;
+  const range = paddedMax - min;
+
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * 100;
+    const y = 100 - ((d.val - min) / range) * 100;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <div style={{ width: '100%', height: '180px', position: 'relative', marginTop: '40px', paddingBottom: '30px', paddingLeft: '50px' }}>
+
+      {/* Y Axis Labels */}
+      <div style={{ position: 'absolute', top: 0, left: 0, height: '150px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '0.75rem', opacity: 0.7, paddingRight: '10px', alignItems: 'flex-end', width: '50px', transform: 'translateY(-6px)' }}>
+        <span>{max}{unit}</span>
+        <span>{Math.round(max / 2)}{unit}</span>
+        <span>0{unit}</span>
+      </div>
+
+      {/* Graph Area */}
+      <div style={{ width: '100%', height: '150px', position: 'relative', borderBottom: '2px solid var(--border)', borderLeft: '2px solid var(--border)' }}>
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+          <polyline points={points} fill="none" stroke="var(--color-emerald-base)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+          {data.map((d, i) => {
+            const x = (i / (data.length - 1)) * 100;
+            const y = 100 - ((d.val - min) / range) * 100;
+            return (
+              <circle key={i} cx={x} cy={y} r="5" fill="var(--color-accent-gold)" stroke="white" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            );
+          })}
+        </svg>
+
+        {/* X Axis Labels */}
+        {data.map((d, i) => {
+          const x = (i / (data.length - 1)) * 100;
+          return (
+            <div key={i} style={{ position: 'absolute', bottom: '-25px', left: `${x}%`, transform: 'translateX(-50%)', fontSize: '0.75rem', opacity: 0.7, whiteSpace: 'nowrap' }}>
+              {d.time}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const testimonials = [
   { quote: "TikTok destroyed my attention span. DopaMind acts as a digital pacifier that actually heals my brain.", author: "Alex T.", role: "Student", initials: "AT" },
@@ -91,7 +176,26 @@ export default function LandingPage() {
   const [usernameStatus, setUsernameStatus] = useState(null); // 'available' | 'taken' | 'checking' | 'invalid'
 
   const [activeFaq, setActiveFaq] = useState(null);
+  const [activeMetric, setActiveMetric] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [activeGame, setActiveGame] = useState(0);
+
+  // Auto-loop testimonials every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-loop games every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveGame((prev) => (prev + 1) % gamesList.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Check username availability
   useEffect(() => {
@@ -99,20 +203,20 @@ export default function LandingPage() {
       setUsernameStatus(null);
       return;
     }
-    
+
     const checkUsername = async () => {
       setUsernameStatus('checking');
       if (!/^[a-zA-Z0-9_]+$/.test(authUsername)) {
         setUsernameStatus('invalid');
         return;
       }
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('username')
         .eq('username', authUsername)
         .single();
-        
+
       if (error && error.code === 'PGRST116') {
         // No row found
         setUsernameStatus('available');
@@ -142,8 +246,8 @@ export default function LandingPage() {
         if (usernameStatus !== 'available') {
           throw new Error("Please choose a valid and available username.");
         }
-        const { data, error } = await supabase.auth.signUp({ 
-          email: authEmail, 
+        const { data, error } = await supabase.auth.signUp({
+          email: authEmail,
           password: authPassword,
           options: {
             data: {
@@ -187,150 +291,214 @@ export default function LandingPage() {
     <PublicLayout onAuthClick={() => setAuthOpen(true)}>
 
       {/* ⚡ Hero Section */}
-      <section className="hero-section" style={{ display: 'block' }}>
-        <div className="hero-info glass-panel" style={{ padding: '60px 40px', alignItems: 'center', textAlign: 'center' }}>
-          <div className="tag-badge">🪴 Positive Dopamine Gym</div>
-          <h1>Doomscrolling is shrinking your focus.</h1>
-          <p className="hero-lead">
-            {BrandConfig.description}
+      <section className="hero-section" style={{ display: 'block', marginBottom: '40px' }}>
+        <div className="hero-info glass-panel" style={{ padding: '80px 40px', alignItems: 'center', textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
+          <div className="tag-badge" style={{ marginBottom: '24px', fontWeight: 'bold' }}>🧠 The Brain Growth Platform</div>
+          
+          <h1 style={{ fontSize: '3.5rem', lineHeight: '1.1', margin: '0 auto 24px auto', maxWidth: '750px', color: 'var(--color-emerald-deep)' }}>
+            Your Brain Dictates Your Reality.
+          </h1>
+          
+          <p className="hero-lead" style={{ fontSize: '1.25rem', maxWidth: '750px', margin: '0 auto 30px auto', lineHeight: '1.6', color: 'var(--text-primary)' }}>
+            <strong>Let's be extremely clear about what we do.</strong> DopaMind is a mental fitness platform designed to undo the damage of endless scrolling and rebuild your natural attention span.
           </p>
-        </div>
+          
+          <div style={{ background: 'var(--color-oat)', padding: '32px', borderRadius: '16px', maxWidth: '750px', margin: '0 auto 40px auto', border: '1px solid var(--border-light)', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <span style={{ fontSize: '1.6rem', marginTop: '2px' }}>🧠</span>
+              <div>
+                <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', fontSize: '1.15rem', marginBottom: '4px' }}>The Hard Truth</strong>
+                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '1rem' }}>Nothing in this world will fix your attention span by default. Your brain dictates your life growth.</span>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <span style={{ fontSize: '1.6rem', marginTop: '2px' }}>🛑</span>
+              <div>
+                <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', fontSize: '1.15rem', marginBottom: '4px' }}>Your Commitment</strong>
+                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '1rem' }}>If you are not committed, do not sign up. DopaMind is exclusively for those ready to take action.</span>
+              </div>
+            </div>
 
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+              <span style={{ fontSize: '1.6rem', marginTop: '2px' }}>🌱</span>
+              <div>
+                <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', fontSize: '1.15rem', marginBottom: '4px' }}>The Promise</strong>
+                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '1rem' }}>If you put in a small, active effort every day, DopaMind will rewire your focus and elevate your entire life.</span>
+              </div>
+            </div>
+          </div>
+
+          <button className="btn-primary" onClick={() => window.location.href = '/?auth=true'} style={{ fontSize: '1.2rem', padding: '18px 48px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 'bold' }}>
+            I Am Committed ↗
+          </button>
+        </div>
       </section>
 
-      {/* 🤝 Collaboration / Backed-By Badge */}
-      <section className="collaboration-badge" style={{ maxWidth: '100%', width: '100%', textAlign: 'center', margin: '20px 0 40px' }}>
-        <div style={{ opacity: 0.6, fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Backed by cognitive science & used by</div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '40px', flexWrap: 'wrap', opacity: 0.8 }}>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'serif' }}>Harvard Med</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>YC Alumni</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '-1px' }}>Meta Dropouts</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Stanford Lab</span>
+      {/* 🧠 Problem & Solution Section */}
+      <section id="the-solution" className="glass-panel" style={{ padding: '80px 60px', maxWidth: '100%', width: '100%', marginBottom: '40px', display: 'flex', flexWrap: 'wrap', gap: '60px', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 500px' }}>
+          <h2 style={{ fontSize: '2.2rem', marginTop: 0, marginBottom: '16px', lineHeight: 1.2, color: 'var(--color-error-coral)' }}>The Enemy: Infinite Scrolling</h2>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '32px' }}>
+            Tech giants engineered feeds like Shorts and Reels to systematically exploit your dopamine baseline. It's not a lack of willpower; it's algorithmic hijacking.
+          </p>
+          <h2 style={{ fontSize: '2.2rem', marginTop: 0, marginBottom: '16px', lineHeight: 1.2, color: 'var(--color-emerald-base)' }}>The Antidote: Active Play</h2>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '40px' }}>
+            We engineered games to restore it. Instead of fighting your brain's natural wiring for reward, we harness it. Outcompete cheap dopamine with deep, rewarding focus.
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/guest/trial/braingym')} style={{ fontSize: '1.2rem', padding: '16px 36px' }}>
+            Try it Now <span style={{ marginLeft: '8px' }}>↗</span>
+          </button>
+        </div>
+
+        <div style={{ flex: '1 1 350px', display: 'flex', justifyContent: 'center' }}>
+          <div style={{
+            width: '100%', maxWidth: '420px', padding: '60px 20px',
+            background: 'linear-gradient(135deg, var(--color-sage-light), var(--color-oat))',
+            borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'inset 0 0 60px rgba(40, 77, 54, 0.05)', border: '1px solid var(--border-light)',
+            flexDirection: 'column', gap: '30px'
+          }}>
+            <Brain3DSequence />
+            <div style={{ textAlign: 'center', zIndex: 1, marginTop: '10px' }}>
+              <h3 style={{ fontSize: '2.2rem', color: 'var(--color-emerald-deep)', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>DopaMind</h3>
+              <strong style={{ fontSize: '1.2rem', color: 'var(--color-emerald-base)' }}>Reclaim Your Focus</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 🕹️ Games Roadmap Grid */}
+      <section id="games" className="games-section" style={{ maxWidth: '100%', width: '100%', marginBottom: '40px' }}>
+        <div className="glass-panel" style={{ padding: '60px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h2 className="section-title">Your Daily Mental Workout</h2>
+          <p className="section-subtitle" style={{ textAlign: 'center', maxWidth: '700px', marginBottom: '40px' }}>
+            Five highly-calibrated mini-games designed to rebuild spatial memory, reaction time, and raw focus. Hit flow state on command.
+          </p>
+
+          <div style={{ position: 'relative', width: '100%', maxWidth: '900px', minHeight: '450px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {gamesList.map((game, i) => (
+              <div
+                key={game.id}
+                style={{
+                  position: i === activeGame ? 'relative' : 'absolute',
+                  opacity: i === activeGame ? 1 : 0,
+                  transform: i === activeGame ? 'translateX(0)' : 'translateX(20px)',
+                  transition: 'opacity 0.6s ease, transform 0.6s ease',
+                  pointerEvents: i === activeGame ? 'auto' : 'none',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%',
+                  zIndex: i === activeGame ? 2 : 1
+                }}
+              >
+                {/* GIF Placeholder Box */}
+                <div style={{ width: '100%', maxWidth: '600px', aspectRatio: '16/9', background: 'var(--color-sage-light)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', marginBottom: '30px', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.05)' }}>
+                  <div style={{ textAlign: 'center', opacity: 0.6 }}>
+                    <span style={{ fontSize: '3rem', display: 'block', marginBottom: '10px', color: 'var(--color-emerald-base)' }}>{game.icon}</span>
+                    <strong style={{ fontSize: '1.2rem', fontFamily: 'var(--font-header)', color: 'var(--color-emerald-deep)' }}>{game.name} Gameplay (GIF Ready)</strong>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center' }}>
+                  <h3 style={{ margin: '0 0 10px 0', fontSize: '2rem', color: 'var(--color-emerald-deep)', fontFamily: 'var(--font-header)' }}>{game.name}</h3>
+                  <span className="game-card-badge" style={{ display: 'inline-block', marginBottom: '15px', background: 'var(--color-emerald-base)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>{game.focus}</span>
+                  <p style={{ fontSize: '1.1rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>{game.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '40px' }}>
+            {gamesList.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveGame(i)}
+                style={{
+                  width: '10px', height: '10px', borderRadius: '50%', border: 'none', cursor: 'pointer', padding: 0,
+                  background: i === activeGame ? 'var(--color-emerald-base)' : 'var(--color-sage-green)',
+                  transition: 'background 0.3s, transform 0.3s',
+                  transform: i === activeGame ? 'scale(1.2)' : 'scale(1)'
+                }}
+                aria-label={`Go to game slide ${i + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* 📊 Parameters Section */}
       <section id="data-metrics" className="data-metrics-section" style={{ maxWidth: '100%', width: '100%', marginBottom: '40px' }}>
         <div className="glass-panel" style={{ padding: '60px 40px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '10px' }}>The Data Behind The Focus</h2>
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '0px' }}>Backed by Hard Data</h2>
+          <p style={{ textAlign: 'center', opacity: 0.8, marginTop: '0px', marginBottom: '20px' }}>We don't guess. We track cognitive improvements in real-time. See the math behind the mind.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
             {trustMetrics.map((metric, i) => (
-              <TooltipCard key={i} value={metric.value} label={metric.label} calc={metric.calc} />
+              <MetricCard key={i} value={metric.value} label={metric.label} onClick={() => setActiveMetric(metric)} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* 💬 User Reviews Marquee */}
-      <section id="reviews" className="reviews-section" style={{ maxWidth: '100%', width: '100%', overflow: 'hidden', padding: '40px 0', marginBottom: '40px' }}>
-        <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '40px' }}>Stories of Reclaimed Minds</h2>
-        <style>
-          {`
-            .marquee-container {
-              display: flex;
-              width: fit-content;
-              animation: marquee 35s linear infinite;
-            }
-            .marquee-container:hover {
-              animation-play-state: paused;
-            }
-            @keyframes marquee {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-          `}
-        </style>
-        <div style={{ display: 'flex', width: '100%', overflow: 'hidden' }}>
-          <div className="marquee-container">
-            {/* Render twice for a seamless infinite loop */}
-            {[...testimonials, ...testimonials].map((t, i) => (
-              <div key={i} className="glass-card" style={{ 
-                width: '350px', padding: '30px', margin: '0 15px', position: 'relative', borderLeft: '4px solid var(--color-emerald-base)',
-                display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexShrink: 0
-              }}>
-                <span style={{ position: 'absolute', top: '10px', left: '20px', fontSize: '4rem', opacity: 0.1, fontFamily: 'serif' }}>"</span>
-                <p style={{ fontSize: '1.05rem', fontStyle: 'italic', lineHeight: 1.6, opacity: 0.9, position: 'relative', zIndex: 1, margin: '0 0 20px 0' }}>
+      {/* 💬 User Reviews Carousel */}
+      <section id="reviews" className="reviews-section" style={{ maxWidth: '100%', width: '100%', marginBottom: '40px' }}>
+        <div className="glass-panel" style={{ padding: '60px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '10px' }}>Proof of Rewiring</h2>
+          <p style={{ textAlign: 'center', opacity: 0.8, marginTop: '0px', marginBottom: '40px' }}>Join thousands who have broken the doomscrolling cycle, cured their brain fog, and unlocked deep work.</p>
+
+          <div style={{ position: 'relative', width: '100%', maxWidth: '800px', minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            {testimonials.map((t, i) => (
+              <div
+                key={i}
+                style={{
+                  position: i === activeTestimonial ? 'relative' : 'absolute',
+                  opacity: i === activeTestimonial ? 1 : 0,
+                  transform: i === activeTestimonial ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'opacity 0.6s ease, transform 0.6s ease',
+                  pointerEvents: i === activeTestimonial ? 'auto' : 'none',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%',
+                  zIndex: i === activeTestimonial ? 2 : 1
+                }}
+              >
+                <span style={{ fontSize: '4rem', opacity: 0.1, fontFamily: 'serif', lineHeight: 1, marginBottom: '-20px' }}>"</span>
+                <p style={{ fontSize: '1.25rem', fontStyle: 'italic', lineHeight: 1.7, opacity: 0.9, marginBottom: '30px', maxWidth: '650px' }}>
                   {t.quote}
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-emerald-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>{t.initials}</div>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-emerald-deep)' }}>{t.author}</h4>
-                    <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>{t.role}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--color-emerald-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>{t.initials}</div>
+                  <div style={{ textAlign: 'left' }}>
+                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--color-emerald-deep)' }}>{t.author}</h4>
+                    <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>{t.role}</span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* 🕹️ Games Roadmap Grid */}
-      <section id="games" className="games-section" style={{ maxWidth: '100%', width: '100%' }}>
-        <div className="glass-panel" style={{ padding: '40px' }}>
-          <h2 className="section-title">The Cognitive Training Toolkit</h2>
-          <p className="section-subtitle">
-            Five specialized mini-games designed to stimulate positive focus feedback loops and keep you in a Flow State.
-          </p>
-
-          <div className="games-grid">
-            {gamesList.map((game) => (
-              <div key={game.id} className="glass-card game-card">
-                <span className="game-card-icon">{game.icon}</span>
-                <h3>{game.name}</h3>
-                <span className="game-card-badge">{game.focus}</span>
-                <p>{game.description}</p>
-              </div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '30px' }}>
+            {testimonials.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveTestimonial(i)}
+                style={{
+                  width: '10px', height: '10px', borderRadius: '50%', border: 'none', cursor: 'pointer', padding: 0,
+                  background: i === activeTestimonial ? 'var(--color-emerald-base)' : 'var(--color-sage-green)',
+                  transition: 'background 0.3s, transform 0.3s',
+                  transform: i === activeTestimonial ? 'scale(1.2)' : 'scale(1)'
+                }}
+                aria-label={`Go to slide ${i + 1}`}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* 🪴 Streak Plant Section */}
-      <section id="streak" className="streak-section glass-panel" style={{ padding: '40px', maxWidth: '100%', width: '100%' }}>
-        <div className="streak-content">
-          <h2>Grow Your Daily Streak Pixel Plant</h2>
-          <p>
-            Every day you complete a 45-second focus gym session, you water your digital pixel plant. Watch it grow from a single seed into a full-bloom flower. Protect your streak in the cloud using cloud backups to keep your streak alive.
-          </p>
-          <ul className="streak-bullets">
-            <li>🌱 <strong>Day 1-2:</strong> Seed sprouts into a green leaf.</li>
-            <li>🌿 <strong>Day 3-6:</strong> Leaves expand into a robust Sage branch.</li>
-            <li>🌸 <strong>Day 30:</strong> Golden petals bloom, rewarding your attention consistency.</li>
-          </ul>
-        </div>
-        <div className="streak-artwork">
-          <div className="pixel-pot">
-            <div className="pixel-plant-leaves animate-bounce">
-              🌱
-            </div>
-            <div className="pixel-pot-base">🏺</div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🧠 Core Philosophy Section */}
-      <section id="philosophy" className="philosophy-section" style={{ maxWidth: '100%', width: '100%' }}>
-        <div className="glass-panel" style={{ padding: '60px 40px', textAlign: 'center', border: '1px solid var(--color-emerald-base)' }}>
-          <h2 className="section-title" style={{ fontSize: '2.5rem', marginBottom: '20px' }}>Our Philosophy: Gamifying Brain Growth</h2>
-          <p style={{ fontSize: '1.15rem', lineHeight: '1.8', maxWidth: '850px', margin: '0 auto', opacity: 0.9 }}>
-            Tech giants spent billions engineering algorithms to hijack your dopamine baseline. We are building the antidote.<br/><br/>
-            We believe that <strong>games are the ultimate weapon against doomscrolling</strong>. From playing digital video games to cricket, the human brain is naturally attracted to play, challenge, and reward.<br/><br/>
-            Instead of fighting your brain's natural wiring, we harness it. <strong>DopaMind is a research-oriented, data-driven platform</strong> that builds specialized cognitive games designed to stimulate brain growth and beat algorithmic scrolling addiction.<br/><br/>
-            DopaMind is your daily mental barbell. By spending just 3 minutes a day in active, high-effort focus, you can physically rewire your brain to delay gratification and reclaim your attention span.<br/><br/>
-            <strong>We do not build addictive algorithms. We build cognitive resistance to them.</strong>
-          </p>
-        </div>
-      </section>
-
       {/* ❓ FAQ Section */}
-      <section id="faq" className="faq-section" style={{ maxWidth: '100%', width: '100%' }}>
+      <section id="faq" className="faq-section" style={{ maxWidth: '100%', width: '100%', marginBottom: '40px' }}>
         <div className="glass-panel" style={{ padding: '40px' }}>
-          <h2 className="section-title">Frequently Asked Questions</h2>
+          <h2 className="section-title">Common Questions</h2>
           <div className="faq-accordion">
             {faqs.map((faq, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`faq-item glass-card ${activeFaq === index ? 'active' : ''}`}
                 onClick={() => toggleFaq(index)}
               >
@@ -346,6 +514,19 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 🧠 Core Philosophy Section */}
+      <section id="philosophy" className="philosophy-section" style={{ maxWidth: '100%', width: '100%', marginBottom: '40px' }}>
+        <div className="glass-panel" style={{ padding: '60px 40px', textAlign: 'center', border: '1px solid var(--color-emerald-base)' }}>
+          <h2 className="section-title" style={{ fontSize: '2.5rem', marginBottom: '20px' }}>Our Manifesto: Play to Grow</h2>
+          <p style={{ fontSize: '1.15rem', lineHeight: '1.8', maxWidth: '850px', margin: '0 auto', opacity: 0.9 }}>
+            We don't believe in digital minimalism. We believe in <strong>digital resistance.</strong><br /><br />
+            Tech giants spent billions engineering algorithms to hijack your dopamine baseline. We are building the antidote. We harness the brain's natural desire for play, challenge, and reward to rebuild what the algorithms broke.<br /><br />
+            DopaMind is your daily mental barbell. By spending just 3 minutes a day in active, high-effort focus, you can physically rewire your brain to delay gratification and reclaim your attention span.<br /><br />
+            <strong>We do not build addictive apps. We build cognitive resistance to them.</strong>
+          </p>
         </div>
       </section>
 
@@ -374,25 +555,25 @@ export default function LandingPage() {
                   {authMode === "signup" && (
                     <>
                       <label>Full Name</label>
-                      <input 
-                        type="text" 
-                        required 
-                        placeholder="John Doe" 
+                      <input
+                        type="text"
+                        required
+                        placeholder="John Doe"
                         value={authFullName}
                         onChange={(e) => setAuthFullName(e.target.value)}
                       />
-                      
+
                       <label>
-                        Username 
-                        {usernameStatus === 'available' && <span style={{color: 'var(--color-emerald-base)', fontSize: '0.8rem', marginLeft: '8px'}}>Available ✅</span>}
-                        {usernameStatus === 'taken' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Taken ❌</span>}
-                        {usernameStatus === 'checking' && <span style={{color: 'gray', fontSize: '0.8rem', marginLeft: '8px'}}>Checking...</span>}
-                        {usernameStatus === 'invalid' && <span style={{color: 'red', fontSize: '0.8rem', marginLeft: '8px'}}>Letters/numbers/_ only</span>}
+                        Username
+                        {usernameStatus === 'available' && <span style={{ color: 'var(--color-emerald-base)', fontSize: '0.8rem', marginLeft: '8px' }}>Available ✅</span>}
+                        {usernameStatus === 'taken' && <span style={{ color: 'red', fontSize: '0.8rem', marginLeft: '8px' }}>Taken ❌</span>}
+                        {usernameStatus === 'checking' && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '8px' }}>Checking...</span>}
+                        {usernameStatus === 'invalid' && <span style={{ color: 'red', fontSize: '0.8rem', marginLeft: '8px' }}>Letters/numbers/_ only</span>}
                       </label>
-                      <input 
-                        type="text" 
-                        required 
-                        placeholder="johndoe123" 
+                      <input
+                        type="text"
+                        required
+                        placeholder="johndoe123"
                         value={authUsername}
                         onChange={(e) => setAuthUsername(e.target.value.toLowerCase())}
                         style={{ borderColor: usernameStatus === 'taken' ? 'red' : usernameStatus === 'available' ? 'var(--color-emerald-base)' : 'inherit' }}
@@ -401,28 +582,28 @@ export default function LandingPage() {
                   )}
 
                   <label>Email Address</label>
-                  <input 
-                    type="email" 
-                    required 
-                    placeholder="your@email.com" 
+                  <input
+                    type="email"
+                    required
+                    placeholder="your@email.com"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                   />
 
                   <label>Password</label>
-                  <input 
-                    type="password" 
-                    required 
-                    placeholder="••••••••" 
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                   />
 
                   {authError && <p className="auth-error-msg">⚠️ {authError}</p>}
 
-                  <button 
-                    type="submit" 
-                    className="btn-primary auth-submit-btn" 
+                  <button
+                    type="submit"
+                    className="btn-primary auth-submit-btn"
                     disabled={authLoading || (authMode === 'signup' && usernameStatus !== 'available')}
                   >
                     {authLoading ? "Processing..." : authMode === "login" ? "Sign In" : "Sign Up"}
@@ -435,10 +616,10 @@ export default function LandingPage() {
 
                 <button className="google-auth-btn" onClick={handleGoogleLogin}>
                   <svg viewBox="0 0 48 48" width="20px" height="20px">
-                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.422-5.189l-6.196-5.239C29.21,35.154,26.685,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.196,5.239C36.983,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.422-5.189l-6.196-5.239C29.21,35.154,26.685,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.196,5.239C36.983,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
                   </svg>
                   <span>Continue with Google</span>
                 </button>
@@ -461,6 +642,37 @@ export default function LandingPage() {
           🌿 {toastMessage}
         </div>
       )}
+
+      {/* 📈 Metric Details Modal Overlay */}
+      {activeMetric && (
+        <div className="auth-modal-overlay" onClick={() => setActiveMetric(null)}>
+          <div className="auth-modal glass-panel" style={{ maxWidth: '500px', padding: '40px' }} onClick={(e) => e.stopPropagation()}>
+            <button className="auth-close-btn" onClick={() => setActiveMetric(null)}>×</button>
+
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '3rem', margin: 0, color: 'var(--color-emerald-base)', fontFamily: 'var(--font-header)' }}>
+                {activeMetric.value}
+              </h2>
+              <p style={{ fontSize: '1.2rem', fontWeight: '500', opacity: 0.9, marginTop: '10px' }}>
+                {activeMetric.label}
+              </p>
+            </div>
+
+            <div style={{ background: 'var(--color-oat-light)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+              <strong style={{ display: 'block', color: 'var(--color-emerald-deep)', marginBottom: '8px', textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px' }}>
+                How this is calculated
+              </strong>
+              <p style={{ margin: 0, opacity: 0.8, lineHeight: '1.5', fontSize: '0.95rem' }}>
+                {activeMetric.calc}
+              </p>
+            </div>
+
+            <MiniChart data={activeMetric.data} unit={activeMetric.unit} />
+
+          </div>
+        </div>
+      )}
+
     </PublicLayout>
   );
 }

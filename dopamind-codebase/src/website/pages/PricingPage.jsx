@@ -72,7 +72,7 @@ export default function PricingPage() {
             <li>❌ Cloud streak backups</li>
             <li>❌ AI guided schedules</li>
           </ul>
-          <button className="btn-secondary" onClick={() => window.location.href = "/play"}>
+          <button className="btn-secondary" onClick={() => window.location.href = "/?auth=true"}>
             Start Playing
           </button>
         </div>
