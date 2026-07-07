@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/supabaseClient';
 import { Shield, Settings, Sparkles, MessageSquare, Sun, Moon, Bell, Volume2, UserX } from 'lucide-react';
+import NotificationEngine from '@/app/core/engagement/NotificationEngine';
 
 export default function SettingsView({ 
   session, 
@@ -17,6 +18,10 @@ export default function SettingsView({
   const [sound, setSound] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState(null);
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
 
   const [profileUsername, setProfileUsername] = useState("");
   const [editUsername, setEditUsername] = useState("");
@@ -37,7 +42,14 @@ export default function SettingsView({
         setEditFullName(data.full_name || "");
       }
     }
-    if (session?.user?.id) loadProfile();
+    async function loadNotifPrefs() {
+      const prefs = await NotificationEngine.loadPreferences(session?.user?.id);
+      if (prefs) setNotifPrefs(prefs);
+    }
+    if (session?.user?.id) {
+      loadProfile();
+      loadNotifPrefs();
+    }
   }, [session]);
 
   useEffect(() => {
@@ -248,6 +260,82 @@ export default function SettingsView({
           </div>
         </div>
 
+        {/* Notifications Card */}
+        <div className="glass-panel settings-card" style={{ padding: '32px' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 24px 0' }}>
+            <Bell size={24} color="var(--color-emerald-base)" /> Notifications
+          </h2>
+
+          {/* Permission Status */}
+          <div style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.95rem' }}>Browser Notifications</strong>
+                <span style={{ fontSize: '0.82rem', opacity: 0.65 }}>
+                  {notifPermission === 'granted' ? 'Enabled — notifications will appear on your desktop.' :
+                   notifPermission === 'denied'  ? 'Blocked — enable in your browser settings.' :
+                   'Not yet requested.'}
+                </span>
+              </div>
+              {notifPermission !== 'granted' && notifPermission !== 'denied' && (
+                <button
+                  className="btn-primary"
+                  style={{ padding: '8px 16px', fontSize: '0.82rem' }}
+                  onClick={async () => {
+                    const granted = await NotificationEngine.requestPermission();
+                    setNotifPermission(Notification.permission);
+                    if (granted) showToast('Notifications enabled!');
+                    else showToast('Permission denied by browser.');
+                  }}
+                >
+                  Enable
+                </button>
+              )}
+              {notifPermission === 'granted' && (
+                <span style={{ padding: '6px 12px', background: 'rgba(16,185,129,0.15)', color: 'var(--color-emerald-base)', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700 }}>Active</span>
+              )}
+            </div>
+          </div>
+
+          {/* Per-type toggles */}
+          {notifPrefs && notifPermission === 'granted' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {[
+                { label: 'Streak Reminders', key: 'streak_reminder_enabled', desc: `Daily reminder at ${notifPrefs.streak_reminder_time?.slice(0,5) || '20:00'}` },
+                { label: 'Badge Unlocks',    key: 'badge_notifications',     desc: 'Notify when you earn a new badge' },
+                { label: 'Level Ups',        key: 'level_up_notifications',  desc: 'Celebrate new level achievements' },
+                { label: 'Personal Bests',   key: 'personal_best_notifications', desc: 'Notify on new all-time records' },
+                { label: 'Weekly Summary',   key: 'weekly_summary_enabled',  desc: 'Weekly performance digest' },
+              ].map(({ label, key, desc }) => (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.9rem' }}>{label}</strong>
+                    <span style={{ fontSize: '0.78rem', opacity: 0.6 }}>{desc}</span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+                      setNotifPrefs(updated);
+                      await NotificationEngine.savePreferences(session.user.id, { [key]: updated[key] });
+                    }}
+                    style={{
+                      width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                      background: notifPrefs[key] ? 'var(--color-emerald-base)' : 'var(--border)',
+                      position: 'relative', transition: 'background 0.2s',
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute', top: '3px', borderRadius: '50%', width: '18px', height: '18px',
+                      background: 'white', transition: 'left 0.2s',
+                      left: notifPrefs[key] ? '23px' : '3px',
+                    }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Account Management Card */}
         <div className="glass-panel settings-card" style={{ padding: '32px' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 24px 0', color: 'var(--color-error-coral)' }}>
@@ -301,52 +389,7 @@ export default function SettingsView({
               </button>
             </div>
 
-            {/* AI Assistant Layout */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <strong style={{ display: 'block', fontSize: '1.1rem' }}>AI Layout (Mobile Friendly)</strong>
-                <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>Choose standard chat window or compact banner notifications.</span>
-              </div>
-              <button 
-                onClick={() => {
-                  const targetSize = aiWidgetSize === 'standard' ? 'compact' : 'standard';
-                  setAiWidgetSize(targetSize);
-                  showToast(`AI size set to ${targetSize === 'compact' ? 'Compact' : 'Standard'}`);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '10px 16px', borderRadius: '12px',
-                  background: aiWidgetSize === 'compact' ? 'var(--color-emerald-base)' : 'transparent',
-                  color: aiWidgetSize === 'compact' ? 'white' : 'var(--text)',
-                  border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600
-                }}
-              >
-                <MessageSquare size={18} /> {aiWidgetSize === 'compact' ? 'Compact' : 'Standard'}
-              </button>
-            </div>
 
-            {/* AI Explainer / Onboarding */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <strong style={{ display: 'block', fontSize: '1.1rem' }}>AI Auto Explainer</strong>
-                <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>Automatically pop up guide prompts on visiting pages.</span>
-              </div>
-              <button 
-                onClick={() => {
-                  setAutoGuide(!autoGuide);
-                  showToast(autoGuide ? "Auto Guide disabled!" : "Auto Guide enabled!");
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '10px 16px', borderRadius: '12px',
-                  background: autoGuide ? 'var(--color-emerald-base)' : 'transparent',
-                  color: autoGuide ? 'white' : 'var(--text)',
-                  border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600
-                }}
-              >
-                <Sparkles size={18} /> {autoGuide ? 'On Visit' : 'Manual'}
-              </button>
-            </div>
 
             {/* Sound Toggle */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>

@@ -14,8 +14,9 @@
 // READ: .agents/skills/dopamind/SKILL.md → "Game Categories" table for category→game mapping
 // READ: views/BrainGymView.jsx for existing game launcher patterns
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { supabase } from '@/supabaseClient';
 import PublicLayout from '@/shared/ui/PublicLayout';
 import InteractiveGame from '@/app/games/core_engine/InteractiveGame';
 import FocusGrid from '@/app/games/library/FocusGrid';
@@ -148,6 +149,19 @@ export default function GamesLibraryPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedGame, setSelectedGame] = useState(null);
+  const [session, setSession] = useState(null);
+  const [username, setUsername] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        supabase.from('profiles').select('username').eq('id', session.user.id).single().then(({data}) => {
+          setUsername(data?.username || 'user');
+        });
+      }
+    });
+  }, []);
 
   const filteredGames = activeCategory === "All" 
     ? gamesList 
@@ -244,12 +258,20 @@ export default function GamesLibraryPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
-              <button className="btn-primary" onClick={() => window.location.href = '/?auth=true'} style={{ padding: '14px', fontSize: '1.1rem', width: '100%' }}>
-                Sign Up & Save Progress
-              </button>
-              <button className="btn-secondary" onClick={() => window.location.href = `/guest/trial/braingym?play=${selectedGame.id}`} style={{ padding: '14px', fontSize: '1.1rem', width: '100%' }}>
-                Try It Now (Guest)
-              </button>
+              {session ? (
+                <button className="btn-primary" onClick={() => window.location.href = `/${username || 'user'}/braingym?play=${selectedGame.id}`} style={{ padding: '14px', fontSize: '1.1rem', width: '100%' }}>
+                  Play
+                </button>
+              ) : (
+                <>
+                  <button className="btn-primary" onClick={() => window.location.href = '/?auth=true'} style={{ padding: '14px', fontSize: '1.1rem', width: '100%' }}>
+                    Get Started
+                  </button>
+                  <button className="btn-secondary" onClick={() => window.location.href = `/guest/trial/braingym?play=${selectedGame.id}`} style={{ padding: '14px', fontSize: '1.1rem', width: '100%' }}>
+                    Try It Now (Guest)
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

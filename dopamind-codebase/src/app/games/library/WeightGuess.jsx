@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -18,7 +19,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
  * 
  * Cognitive Target: Cognitive Conflict Resolution & Rule-Based Reasoning Under Interference
  */
-export default function WeightGuess({ onComplete, onQuit }) {
+export default function WeightGuess({ onComplete, onQuit, onHudUpdate }) {
   const SHAPE_WEIGHTS = { circle: 4, square: 3, triangle: 2, diamond: 1 };
   const SHAPES = ['circle', 'square', 'triangle', 'diamond'];
 
@@ -191,13 +192,7 @@ export default function WeightGuess({ onComplete, onQuit }) {
   const beamRotation = tiltDirection === 'left' ? -8 : tiltDirection === 'right' ? 8 : 0;
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level}</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-        <div className="hud-metric">Lives: <strong>{3 - mistakes}</strong></div>
-      </div>
-
+    <div className="active-game-container">
       {/* Weight Key */}
       <div style={{
         display: 'flex', gap: '12px', justifyContent: 'center', margin: '12px 0', flexWrap: 'wrap'

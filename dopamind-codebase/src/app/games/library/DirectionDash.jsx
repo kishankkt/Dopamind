@@ -1,8 +1,9 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
 const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
 
-export default function DirectionDash({ onComplete, onQuit }) {
+export default function DirectionDash({ onComplete, onQuit, onHudUpdate }) {
   const [level, setLevel] = useState(1);
   const [currentArrow, setCurrentArrow] = useState(null); // { dir: 'UP', isReverse: false }
   const [score, setScore] = useState(0);
@@ -90,12 +91,7 @@ export default function DirectionDash({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level} / 5</strong></div>
-        <div className="hud-metric">Score: <strong>{score} / 20</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginBottom: '20px' }}>
         Tap matching direction. <strong style={{color: 'var(--color-error-coral)'}}>If RED, tap OPPOSITE!</strong>
       </div>

@@ -1,6 +1,7 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function FocusGrid({ onComplete, onQuit }) {
+export default function FocusGrid({ onComplete, onQuit, onHudUpdate }) {
   const [sequence, setSequence] = useState([]);
   const [userSequence, setUserSequence] = useState([]);
   const [level, setLevel] = useState(1);
@@ -97,13 +98,7 @@ export default function FocusGrid({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Timer: <strong>{timeLeft}s</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-        <div className="hud-metric">Level: <strong>{level}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="focusgrid-board" style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 100px)', gap: '12px', margin: '40px auto', justifyContent: 'center'
       }}>

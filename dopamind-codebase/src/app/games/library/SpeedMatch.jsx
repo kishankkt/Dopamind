@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 import { playChime, playErrorSound, playAscendingArpeggio } from '@/app/core/audio/SynthEngine';
 
@@ -5,8 +6,11 @@ const SHAPES = ["✦", "●", "▲", "■", "◆"];
 
 export default function SpeedMatch({ 
   isActive,
-  onGameComplete 
+  onGameComplete,
+  onQuit,
+  onHudUpdate,
 }) {
+  const gameStartTime = useRef(Date.now());
   const [isFirstCard, setIsFirstCard] = useState(true);
   const [currentShape, setCurrentShape] = useState("");
   const [previousShape, setPreviousShape] = useState("");
@@ -48,6 +52,7 @@ export default function SpeedMatch({
     setConsecutiveCorrect(0);
     setConsecutiveIncorrect(0);
     latencyRecords.current = [];
+    gameStartTime.current = Date.now();
 
     const firstShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     setCurrentShape(firstShape);
@@ -71,11 +76,13 @@ export default function SpeedMatch({
 
     roundTimerRef.current = setInterval(() => {
       setGameTimeLeft((prev) => {
-        if (prev <= 1) {
+        const next = prev - 1;
+        if (onHudUpdate) onHudUpdate({ score: gameScore, timeLeft: next });
+        if (next <= 1) {
           endGameRound();
           return 0;
         }
-        return prev - 1;
+        return next;
       });
     }, 1000);
 
@@ -106,7 +113,11 @@ export default function SpeedMatch({
     const isCorrect = userChoice !== null && userChoice === isMatch;
 
     if (isCorrect) {
-      setGameScore((prev) => prev + 1);
+      setGameScore((prev) => {
+        const next = prev + 1;
+        if (onHudUpdate) onHudUpdate({ score: next });
+        return next;
+      });
       setFeedback("correct");
 
       const newConsecutiveCorrect = consecutiveCorrect + 1;
@@ -188,7 +199,18 @@ export default function SpeedMatch({
     clearTimers();
     const avgSpeed = getAverageLatency();
     const accuracy = gameAttempts > 0 ? Math.round((gameScore / gameAttempts) * 100) : 0;
-    const stats = { score: gameScore, attempts: gameAttempts, accuracy_percent: accuracy, avg_speed_seconds: avgSpeed };
+    const durationSeconds = Math.round((Date.now() - gameStartTime.current) / 1000);
+    const stats = {
+      score:             gameScore,
+      attempts:          gameAttempts,
+      accuracy_percent:  accuracy,
+      avg_speed_seconds: avgSpeed,
+      level_reached:     1,
+      duration_seconds:  durationSeconds,
+      streak_in_game:    consecutiveCorrect,
+      perfect_rounds:    0,
+      game_specific: { speed_limit_reached: currentSpeedLimit },
+    };
     
     if (onGameComplete) {
       onGameComplete('speedmatch', stats);
@@ -205,16 +227,6 @@ export default function SpeedMatch({
 
   return (
     <div className="active-game-container">
-      <div className="game-hud">
-        <div className="hud-left">
-          <span className="hud-score">Score: {gameScore}</span>
-        </div>
-        <div className="hud-right">
-          <span className={`hud-timer ${gameTimeLeft <= 10 ? 'pulse-red' : ''}`}>
-            {gameTimeLeft}s
-          </span>
-        </div>
-      </div>
       <div className="game-stage">
         {isFirstCard ? (
           <div className="first-card-prompt">
@@ -249,6 +261,11 @@ export default function SpeedMatch({
         <div className="difficulty-meter">
           Speed Limit: {currentSpeedLimit.toFixed(1)}s
         </div>
+        {onQuit && (
+          <button className="btn-secondary" onClick={onQuit} style={{ marginTop: '12px', fontSize: '0.8rem' }}>
+            Quit to Gym
+          </button>
+        )}
       </div>
     </div>
   );

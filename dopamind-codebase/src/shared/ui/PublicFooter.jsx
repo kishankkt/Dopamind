@@ -8,7 +8,7 @@ export default function PublicFooter() {
 
   return (
     <>
-      <footer className="site-footer glass-panel" style={{ padding: '60px 40px', marginTop: '40px' }}>
+      <footer className="site-footer glass-panel" style={{ padding: '60px 40px', marginTop: '40px', borderTop: '1px solid var(--color-emerald-base)' }}>
         <div style={{ width: '100%', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
           
           {/* Brand & Copyright */}

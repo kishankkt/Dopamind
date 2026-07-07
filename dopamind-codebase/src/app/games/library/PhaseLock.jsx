@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -15,7 +16,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
  * 
  * Cognitive Target: Temporal Synchronization & Divided Sustained Attention
  */
-export default function PhaseLock({ onComplete, onQuit }) {
+export default function PhaseLock({ onComplete, onQuit, onHudUpdate }) {
   const canvasRef = useRef(null);
   const frameRef = useRef(null);
   const gameOverRef = useRef(false);
@@ -184,13 +185,7 @@ export default function PhaseLock({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level}</strong></div>
-        <div className="hud-metric">Locks: <strong>{score}</strong></div>
-        <div className="hud-metric">Lives: <strong>{3 - mistakes}</strong></div>
-      </div>
-
+    <div className="active-game-container">
       <div style={{
         display: 'flex',
         flexDirection: 'column',

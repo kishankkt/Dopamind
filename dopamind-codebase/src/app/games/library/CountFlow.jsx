@@ -1,6 +1,7 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function CountFlow({ onComplete, onQuit }) {
+export default function CountFlow({ onComplete, onQuit, onHudUpdate }) {
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
@@ -93,12 +94,7 @@ export default function CountFlow({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Timer: <strong>{timeLeft}s</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className={`card-stage-container ${feedback}`}>
         <div className="game-card-display" style={{ padding: '40px', fontSize: '3rem', fontWeight: 'bold' }}>
           {equation} = ?

@@ -1,6 +1,7 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function NumberCascade({ onComplete, onQuit }) {
+export default function NumberCascade({ onComplete, onQuit, onHudUpdate }) {
   const [level, setLevel] = useState(1);
   const [sequence, setSequence] = useState("");
   const [userInput, setUserInput] = useState("");
@@ -84,12 +85,7 @@ export default function NumberCascade({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level} / 5</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="card-stage-container" style={{ height: '200px', flexDirection: 'column' }}>
         {state === "memorize" && (
           <>

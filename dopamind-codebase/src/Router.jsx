@@ -28,6 +28,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import ProtectedRoute from './app/core/auth/ProtectedRoute';
+import InteractiveLeaf from '@/app/games/library/InteractiveLeaf';
 
 import LandingPage from '@/website/pages/LandingPage';
 import VisionPage from '@/website/pages/VisionPage';
@@ -70,6 +71,9 @@ function DashboardRedirect() {
 export default function Router() {
   return (
     <BrowserRouter>
+      {/* 🌿 Global AI Chatbot and Theme Toggle */}
+      <InteractiveLeaf />
+
       <Routes>
         <Route 
           path="/" 
@@ -90,6 +94,7 @@ export default function Router() {
         {/* Guest Routing */}
         <Route path="/guest/:fingerprint/dashboard" element={<AppShell defaultTab="dashboard" />} />
         <Route path="/guest/:fingerprint/braingym" element={<AppShell defaultTab="games" />} />
+        <Route path="/guest/:fingerprint/coaches" element={<AppShell defaultTab="coaches" />} />
 
         {/* Redirects */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
@@ -97,7 +102,7 @@ export default function Router() {
         {/* Username Routing (placed at bottom to prevent colliding with static paths) */}
         <Route path="/:username/dashboard" element={<ProtectedRoute><AppShell defaultTab="dashboard" /></ProtectedRoute>} />
         <Route path="/:username/braingym" element={<ProtectedRoute><AppShell defaultTab="games" /></ProtectedRoute>} />
-        <Route path="/:username/guidance" element={<ProtectedRoute><AppShell defaultTab="guidance" /></ProtectedRoute>} />
+        <Route path="/:username/coaches" element={<ProtectedRoute><AppShell defaultTab="coaches" /></ProtectedRoute>} />
         <Route path="/:username/settings" element={<ProtectedRoute><AppShell defaultTab="settings" /></ProtectedRoute>} />
         
         {/* Fallback for bare username */}

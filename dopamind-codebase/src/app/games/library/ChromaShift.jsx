@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
 /**
@@ -17,7 +18,7 @@ import React, { useState, useEffect, useRef } from 'react';
  * 
  * Cognitive Target: Visual Color Memory & Perceptual Precision
  */
-export default function ChromaShift({ onComplete, onQuit }) {
+export default function ChromaShift({ onComplete, onQuit, onHudUpdate }) {
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
   const [round, setRound] = useState(1);
@@ -116,14 +117,7 @@ export default function ChromaShift({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level}</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-        <div className="hud-metric">Round: <strong>{round}</strong></div>
-        <div className="hud-metric">Lives: <strong>{3 - consecutiveBad}</strong></div>
-      </div>
-
+    <div className="active-game-container">
       <div style={{
         display: 'flex',
         flexDirection: 'column',

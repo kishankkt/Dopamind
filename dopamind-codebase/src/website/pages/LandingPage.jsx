@@ -527,7 +527,7 @@ export default function LandingPage() {
 
       {/* 🧠 Core Philosophy Section */}
       <section id="philosophy" className="philosophy-section" style={{ maxWidth: '100%', width: '100%', marginBottom: '40px' }}>
-        <div className="glass-panel" style={{ padding: '60px 40px', textAlign: 'center', border: '1px solid var(--color-emerald-base)' }}>
+        <div className="glass-panel" style={{ padding: '60px 40px', textAlign: 'center' }}>
           <h2 className="section-title" style={{ fontSize: '2.5rem', marginBottom: '20px' }}>Our Manifesto: Play to Grow</h2>
           <p style={{ fontSize: '1.15rem', lineHeight: '1.8', maxWidth: '850px', margin: '0 auto', opacity: 0.9 }}>
             We don't believe in digital minimalism. We believe in <strong>digital resistance.</strong><br /><br />

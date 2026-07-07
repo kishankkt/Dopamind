@@ -1,6 +1,7 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function ReactionTap({ onComplete, onQuit }) {
+export default function ReactionTap({ onComplete, onQuit, onHudUpdate }) {
   const [level, setLevel] = useState(1);
   const [state, setState] = useState("waiting"); // waiting, ready, tapped, false_start
   const [reactionTime, setReactionTime] = useState(null);
@@ -69,12 +70,7 @@ export default function ReactionTap({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level} / 5</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="card-stage-container" style={{ height: '350px' }}>
         <div 
           onClick={handleTap}

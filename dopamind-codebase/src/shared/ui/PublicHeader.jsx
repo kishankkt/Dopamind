@@ -34,7 +34,7 @@ export default function PublicHeader({ onAuthClick }) {
   };
 
   return (
-    <header className="site-header glass-panel" style={{ zIndex: 100, position: 'relative' }}>
+    <header className="site-header glass-panel" style={{ zIndex: 100, position: 'relative', borderBottom: '1px solid var(--color-emerald-base)' }}>
       <div className="logo-area">
         <Link to="/" className="logo-text" style={{display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit'}}>
           <LogoIcon width={24} height={24} />
@@ -42,9 +42,18 @@ export default function PublicHeader({ onAuthClick }) {
         </Link>
       </div>
       <nav className="header-nav">
-        <Link to="/brain-gym" className="text-btn" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', fontWeight: '500', textDecoration: 'none' }}>Brain Gym</Link>
-        <Link to="/pricing">Pricing</Link>
-        <Link to="/downloads">Downloads</Link>
+        {!isHome && (
+          <Link to="/" className="text-btn" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', fontWeight: '500', textDecoration: 'none' }}>
+            Home
+          </Link>
+        )}
+        {location.pathname !== '/brain-gym' && (
+          <Link to="/brain-gym" className="text-btn" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', fontWeight: '500', textDecoration: 'none' }}>
+            Brain Gym
+          </Link>
+        )}
+        {location.pathname !== '/pricing' && <Link to="/pricing">Pricing</Link>}
+        {location.pathname !== '/downloads' && <Link to="/downloads">Downloads</Link>}
         {session ? (
           <Link to="/dashboard" className="btn-primary nav-cta" style={{ textDecoration: 'none', background: 'var(--color-emerald-base)', color: 'white', border: 'none' }}>
             Dashboard

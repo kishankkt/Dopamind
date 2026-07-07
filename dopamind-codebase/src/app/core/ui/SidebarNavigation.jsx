@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Gamepad2, Settings, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, Gamepad2, Settings, BrainCircuit, LayoutList } from 'lucide-react';
 import { BrandConfig } from '@/config/brand';
 import LogoIcon from '@/shared/ui/LogoIcon';
 import { supabase } from '@/supabaseClient';
@@ -66,10 +66,16 @@ export default function SidebarNavigation({
             <span><Gamepad2 size={20} /></span> Brain Gym
           </button>
           <button 
-            className={`menu-item ${activeTab === "guidance" ? "active" : ""}`}
-            onClick={() => handleNav("guidance", `User navigated to AI Guidance at ${Date.now()}`)}
+            className={`menu-item ${activeTab === 'sessions' ? 'active' : ''}`}
+            onClick={() => handleNav('sessions', `User navigated to Sessions at ${Date.now()}`)}
           >
-            <span><BrainCircuit size={20} /></span> AI Guidance
+            <span><LayoutList size={20} /></span> Your Sessions
+          </button>
+          <button 
+            className={`menu-item ${activeTab === "coaches" ? "active" : ""}`}
+            onClick={() => handleNav("coaches", `User navigated to Coaches at ${Date.now()}`)}
+          >
+            <span><BrainCircuit size={20} /></span> Your Coaches
           </button>
           <button 
             className={`menu-item ${activeTab === "settings" ? "active" : ""}`}

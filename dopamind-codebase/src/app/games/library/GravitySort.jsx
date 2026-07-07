@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -14,7 +15,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
  * 
  * Cognitive Target: Executive Prioritization & Sustained Selective Attention
  */
-export default function GravitySort({ onComplete, onQuit }) {
+export default function GravitySort({ onComplete, onQuit, onHudUpdate }) {
   const [orbs, setOrbs] = useState([]);
   const [nextExpected, setNextExpected] = useState(1);
   const [score, setScore] = useState(0);
@@ -142,14 +143,7 @@ export default function GravitySort({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Wave: <strong>{wave}</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-        <div className="hud-metric">Next: <strong>{nextExpected}</strong></div>
-        <div className="hud-metric">Combo: <strong>{combo}x</strong></div>
-      </div>
-
+    <div className="active-game-container">
       <div 
         ref={containerRef}
         style={{

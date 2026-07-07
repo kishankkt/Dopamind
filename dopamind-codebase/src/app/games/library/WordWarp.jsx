@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
 const COLORS = [
@@ -8,7 +9,7 @@ const COLORS = [
   { name: 'PURPLE', hex: '#C084FC' }
 ];
 
-export default function WordWarp({ onComplete, onQuit }) {
+export default function WordWarp({ onComplete, onQuit, onHudUpdate }) {
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
@@ -102,12 +103,7 @@ export default function WordWarp({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Timer: <strong>{timeLeft}s</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginTop: '10px' }}>
         Select the <strong>INK COLOR</strong>, not the word!
       </div>

@@ -1,8 +1,9 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef } from 'react';
 
 const SYMBOLS = ['▲', '▼', '◆', '●', '■', '★', '✚', '✖', '✱', '♥', '♦', '♣', '♠', '✿', '❀', '❃', '❂', '✺', '✵', '✷'];
 
-export default function SymbolMatch({ onComplete, onQuit }) {
+export default function SymbolMatch({ onComplete, onQuit, onHudUpdate }) {
   const [level, setLevel] = useState(1);
   const [gridA, setGridA] = useState([]);
   const [gridB, setGridB] = useState([]);
@@ -75,12 +76,7 @@ export default function SymbolMatch({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level} / 5</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginBottom: '20px' }}>
         Find the ONE symbol that exists in BOTH grids!
       </div>

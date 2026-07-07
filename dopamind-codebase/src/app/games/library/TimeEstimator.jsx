@@ -1,8 +1,9 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useRef } from 'react';
 
 const LEVEL_TARGETS = [3500, 5000, 2200, 7800, 4500]; // ms targets
 
-export default function TimeEstimator({ onComplete, onQuit }) {
+export default function TimeEstimator({ onComplete, onQuit, onHudUpdate }) {
   const [level, setLevel] = useState(1);
   const [state, setState] = useState("ready"); // ready, holding, result
   const [resultTime, setResultTime] = useState(0);
@@ -80,12 +81,7 @@ export default function TimeEstimator({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Round: <strong>{level} / 5</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-      </div>
-      
+    <div className="active-game-container">
       <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginBottom: '20px' }}>
         Estimate exactly <strong>{(targetMs / 1000).toFixed(1)} Seconds</strong>
       </div>

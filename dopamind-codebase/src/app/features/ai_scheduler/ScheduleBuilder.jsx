@@ -46,7 +46,7 @@ export default function ScheduleBuilder({ onStartGame }) {
   );
 
   return (
-    <div className="glass-panel" style={{ maxWidth: '750px', margin: '0 auto', marginTop: '24px', position: 'relative' }}>
+    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '24px', padding: '40px', maxWidth: '750px', margin: '0 auto', marginTop: '24px', position: 'relative' }}>
       <header style={{ textAlign: 'center', marginBottom: '32px' }}>
         <BrainCircuit size={48} style={{ color: 'var(--color-emerald-base)', marginBottom: '16px' }} />
         <h2 style={{ fontFamily: 'var(--font-header)', fontSize: '2rem', margin: 0 }}>AI Neuro-Architect</h2>

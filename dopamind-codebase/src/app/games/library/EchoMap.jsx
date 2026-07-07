@@ -1,3 +1,4 @@
+// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -17,7 +18,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
  * 
  * Cognitive Target: Reverse Working Memory + Mental Rotation
  */
-export default function EchoMap({ onComplete, onQuit }) {
+export default function EchoMap({ onComplete, onQuit, onHudUpdate }) {
   const GRID_SIZE = 4;
   const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
 
@@ -163,14 +164,7 @@ export default function EchoMap({ onComplete, onQuit }) {
   };
 
   return (
-    <div className="game-workspace">
-      <div className="game-hud">
-        <div className="hud-metric">Level: <strong>{level}</strong></div>
-        <div className="hud-metric">Score: <strong>{score}</strong></div>
-        <div className="hud-metric">Chain: <strong>{sequence.length}</strong></div>
-        <div className="hud-metric">Rotation: <strong>{rotation}°</strong></div>
-      </div>
-
+    <div className="active-game-container">
       <div style={{ textAlign: 'center', margin: '16px 0', minHeight: '28px' }}>
         {phase === "showing" && (
           <span className="animate-pulse" style={{ color: 'var(--color-emerald-base)', fontWeight: 700 }}>
