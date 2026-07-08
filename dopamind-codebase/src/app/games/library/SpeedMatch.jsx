@@ -206,14 +206,14 @@ export default function SpeedMatch({
       <GameMainUI>
         {/* Shape card */}
         <div style={{
-          width:  'min(220px, 52vw)',
-          height: 'min(220px, 52vw)',
+          width:  'min(220px, 52vw, 32vh)',
+          height: 'min(220px, 52vw, 32vh)',
           borderRadius: 28,
           background: correct   ? 'rgba(16,185,129,0.15)'
             : incorrect ? 'rgba(239,68,68,0.10)' : 'var(--border-subtle)',
           border: `2px solid ${correct ? 'var(--color-emerald-base)' : incorrect ? 'var(--color-error-coral)' : 'var(--border)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 'clamp(4.5rem, 16vw, 7rem)',
+          fontSize: 'clamp(3rem, min(16vw, 15vh), 7rem)',
           transition: 'all 0.1s ease',
           transform: correct ? 'scale(1.05)' : 'scale(1)',
           boxShadow: correct ? '0 0 40px rgba(16,185,129,0.25)' : 'none',

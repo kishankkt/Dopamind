@@ -11,8 +11,125 @@ export default function InteractiveLeaf() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isVisible, setIsVisible] = useState(() => localStorage.getItem('dopamind_bubbles_visible') !== 'false');
   
   const messagesEndRef = useRef(null);
+
+  // --- DRAG LOGIC ---
+  const [position, setPosition] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef({ startX: 0, startY: 0, offsetX: 0, offsetY: 0, timer: null, isDragging: false, hasDragged: false });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('dopamind_bubble_pos');
+    if (saved) {
+      try { setPosition(JSON.parse(saved)); } catch(e) {}
+    }
+
+    const handleReset = () => {
+      setPosition(null);
+      localStorage.removeItem('dopamind_bubble_pos');
+    };
+    const handleToggle = (e) => {
+      setIsVisible(e.detail.visible);
+      localStorage.setItem('dopamind_bubbles_visible', e.detail.visible);
+    };
+    window.addEventListener('reset-bubble', handleReset);
+    window.addEventListener('toggle-bubbles', handleToggle);
+    return () => {
+      window.removeEventListener('reset-bubble', handleReset);
+      window.removeEventListener('toggle-bubbles', handleToggle);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      if (!dragRef.current.isDragging) {
+        if (dragRef.current.timer) {
+          const dx = Math.abs(clientX - dragRef.current.startX);
+          const dy = Math.abs(clientY - dragRef.current.startY);
+          if (dx > 10 || dy > 10) {
+            clearTimeout(dragRef.current.timer);
+            dragRef.current.timer = null;
+          }
+        }
+        return;
+      }
+      
+      e.preventDefault(); // prevent scrolling while dragging
+      let newX = clientX - dragRef.current.offsetX;
+      let newY = clientY - dragRef.current.offsetY;
+      
+      // Bound to screen so it doesn't go "behind" or off the screen
+      const containerW = 64; // approx size of bubble
+      const containerH = 64;
+      newX = Math.max(0, Math.min(newX, window.innerWidth - containerW));
+      newY = Math.max(0, Math.min(newY, window.innerHeight - containerH));
+      
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleUp = () => {
+      if (dragRef.current.timer) {
+        clearTimeout(dragRef.current.timer);
+        dragRef.current.timer = null;
+      }
+      if (dragRef.current.isDragging) {
+        dragRef.current.isDragging = false;
+        setIsDragging(false);
+        // keep hasDragged true briefly to block onClick
+        setTimeout(() => { dragRef.current.hasDragged = false; }, 100);
+      }
+    };
+
+    window.addEventListener('pointermove', handleMove, { passive: false });
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleUp);
+    
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleUp);
+    };
+  }, []);
+
+  const prevDragging = useRef(isDragging);
+  useEffect(() => {
+    if (prevDragging.current && !isDragging && position) {
+      localStorage.setItem('dopamind_bubble_pos', JSON.stringify(position));
+    }
+    prevDragging.current = isDragging;
+  }, [isDragging, position]);
+
+  const handlePointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    dragRef.current.startX = clientX;
+    dragRef.current.startY = clientY;
+    dragRef.current.hasDragged = false;
+    
+    const container = e.currentTarget.closest('.ai-guide-container');
+    const rect = container.getBoundingClientRect();
+    dragRef.current.offsetX = clientX - rect.left;
+    dragRef.current.offsetY = clientY - rect.top;
+    
+    dragRef.current.timer = setTimeout(() => {
+      dragRef.current.isDragging = true;
+      dragRef.current.hasDragged = true;
+      setIsDragging(true);
+      if (navigator.vibrate) navigator.vibrate(50);
+      setPosition({ x: rect.left, y: rect.top });
+    }, 3000);
+  };
+  // ------------------
 
   // Initialize Dark Mode from localStorage or Auto-detect (Time/OS)
   useEffect(() => {
@@ -40,6 +157,7 @@ export default function InteractiveLeaf() {
   }, []);
 
   const toggleDarkMode = () => {
+    if (dragRef.current.hasDragged) return;
     const newMode = !darkMode;
     setDarkMode(newMode);
     if (newMode) {
@@ -97,8 +215,19 @@ export default function InteractiveLeaf() {
     return { __html: html };
   };
 
+  if (!isVisible) return null;
+
   return (
-    <div className="ai-guide-container">
+    <div 
+      className="ai-guide-container"
+      style={{
+        ...(position ? {
+          bottom: 'auto', right: 'auto',
+          top: position.y, left: position.x,
+          transition: isDragging ? 'none' : 'top 0.3s, left 0.3s'
+        } : {})
+      }}
+    >
       
       {/* 💬 Chat Box */}
       {isOpen && (
@@ -171,17 +300,21 @@ export default function InteractiveLeaf() {
       <div className="ai-controls-row">
         <button 
           className="dark-mode-toggle-icon"
+          onPointerDown={handlePointerDown}
           onClick={toggleDarkMode}
           title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          style={{ transform: isDragging ? 'scale(1.1)' : '' }}
         >
           {darkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
         <div 
           className={`ai-leaf-button ${!isOpen ? 'animate-float' : ''}`}
-          onClick={() => setIsOpen(!isOpen)}
+          onPointerDown={handlePointerDown}
+          onClick={() => { if (!dragRef.current.hasDragged) setIsOpen(!isOpen); }}
           style={{
-            transform: isOpen ? 'scale(0.9) rotate(45deg)' : 'scale(1) rotate(0deg)'
+            transform: isOpen ? 'scale(0.9) rotate(45deg)' : (isDragging ? 'scale(1.1)' : 'scale(1) rotate(0deg)'),
+            boxShadow: isDragging ? '0 12px 36px rgba(16,185,129,0.5)' : ''
           }}
         >
           <span style={{ transform: isOpen ? 'rotate(90deg)' : 'none' }}>

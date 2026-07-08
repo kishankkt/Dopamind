@@ -15,6 +15,7 @@ export function GameScreen({ children }) {
       width: '100%',
       height: '100%',
       flex: 1,
+      minHeight: 0, /* Allow compression */
     }}>
       {children}
     </div>
@@ -31,7 +32,8 @@ export function GameMainUI({ children, style }) {
       justifyContent: 'center',
       flex: 1,
       width: '100%',
-      padding: '16px',
+      padding: '8px 16px', /* Reduced padding */
+      minHeight: 0, /* Allow compression */
       ...style,
     }}>
       {children}
@@ -48,8 +50,9 @@ export function GameFooterInfo({ children, style }) {
       alignItems: 'center',
       justifyContent: 'center',
       width: '100%',
-      padding: '12px 16px',
+      padding: '8px 16px',
       marginTop: 'auto',
+      flexShrink: 0, /* Prevent squishing */
       ...style,
     }}>
       {children}
@@ -66,10 +69,11 @@ export function GameControls({ children, style }) {
       alignItems: 'center',
       justifyContent: 'center',
       width: '100%',
-      padding: '16px',
+      padding: '12px 16px',
       background: 'var(--border-subtle)',
       borderTop: '1px solid var(--border-subtle)',
       borderRadius: '24px 24px 0 0',
+      flexShrink: 0, /* Prevent squishing */
       ...style,
     }}>
       {children}

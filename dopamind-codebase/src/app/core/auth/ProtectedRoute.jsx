@@ -35,8 +35,9 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!session) {
-    // Redirect to landing page and maybe append a query parameter to open auth modal
-    return <Navigate to="/?auth=true" replace />;
+    // Redirect to landing page or desktop-login to open auth modal
+    const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+    return <Navigate to={isDesktop ? "/desktop-login?auth=true" : "/?auth=true"} replace />;
   }
 
   return children;

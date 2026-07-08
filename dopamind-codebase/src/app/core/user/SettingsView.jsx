@@ -412,7 +412,7 @@ export default function SettingsView({
             </div>
 
             {/* Notifications Toggle */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
               <div>
                 <strong style={{ display: 'block', fontSize: '1.1rem' }}>Push Notifications</strong>
                 <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>Get daily streak reminders and brain gym alerts.</span>
@@ -431,6 +431,53 @@ export default function SettingsView({
                 }}
               >
                 <Bell size={18} /> {notifications ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+
+            {/* Hide Bubbles Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <strong style={{ display: 'block', fontSize: '1.1rem' }}>Floating Bubbles</strong>
+                <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>Show the Theme and Chatbot bubbles.</span>
+              </div>
+              <button 
+                onClick={() => {
+                  const current = localStorage.getItem('dopamind_bubbles_visible') !== 'false';
+                  const next = !current;
+                  localStorage.setItem('dopamind_bubbles_visible', next);
+                  window.dispatchEvent(new CustomEvent('toggle-bubbles', { detail: { visible: next } }));
+                  showToast(next ? "Bubbles shown" : "Bubbles hidden");
+                }}
+                style={{
+                  padding: '10px 16px', borderRadius: '12px',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600
+                }}
+              >
+                Toggle Visibility
+              </button>
+            </div>
+
+            {/* Reset Bubble Position */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong style={{ display: 'block', fontSize: '1.1rem' }}>Reset Floating Bubbles</strong>
+                <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>Snap the Chat and Theme bubbles back to default.</span>
+              </div>
+              <button 
+                onClick={() => {
+                  window.dispatchEvent(new Event('reset-bubble'));
+                  showToast("Bubble position reset!");
+                }}
+                style={{
+                  padding: '10px 16px', borderRadius: '12px',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600
+                }}
+              >
+                Reset Position
               </button>
             </div>
           </div>

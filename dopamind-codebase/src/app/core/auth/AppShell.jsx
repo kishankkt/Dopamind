@@ -87,7 +87,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
   }, [gameToPlay]);
 
   // Modals & UI
-  const [authOpen, setAuthOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(searchParams.get('auth') === 'true');
   const [toastMessage, setToastMessage] = useState("");
   const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
   const [customConfirmTitle, setCustomConfirmTitle] = useState("");
@@ -98,6 +98,8 @@ export default function AppShell({ defaultTab = "dashboard" }) {
 
   const cardTimerRef = useRef(null);
   const roundTimerRef = useRef(null);
+  const currentUserIdRef = useRef(null);
+  const toastTimerRef = useRef(null);
 
   // 2. Fetch Profile State
   const fetchUserProfile = async (user) => {
@@ -168,6 +170,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       if (currentSession?.user) {
+        currentUserIdRef.current = currentSession.user.id;
         fetchUserProfile(currentSession.user);
         SessionTracker.start(currentSession.user.id);
       } else {
@@ -176,12 +179,16 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      const isInitialOrDifferentUser = currentUserIdRef.current !== newSession?.user?.id;
       setSession(newSession);
+      
       if (newSession?.user) {
-        setIsProfileLoading(true);
+        currentUserIdRef.current = newSession.user.id;
+        if (isInitialOrDifferentUser) setIsProfileLoading(true);
         fetchUserProfile(newSession.user);
-        SessionTracker.start(newSession.user.id);
+        if (isInitialOrDifferentUser) SessionTracker.start(newSession.user.id);
       } else {
+        currentUserIdRef.current = null;
         setStreak(0);
         setLastPlayed(null);
         setIsProfileLoading(false);
@@ -194,6 +201,13 @@ export default function AppShell({ defaultTab = "dashboard" }) {
       SessionTracker.end();
     };
   }, [fingerprint, username]);
+
+  // Route back to personalized dashboard after generic login (like /desktop-login)
+  useEffect(() => {
+    if (session?.user && profileUsername && !username && !fingerprint) {
+      navigate(`/${profileUsername}/${activeTab}`, { replace: true });
+    }
+  }, [session, profileUsername, username, fingerprint, activeTab, navigate]);
 
   // 3. Game Completion Handler — delegates to gameEngine (which handles all DB + XP)
   const handleGameComplete = async (gameId, stats) => {
@@ -232,8 +246,9 @@ export default function AppShell({ defaultTab = "dashboard" }) {
 
   // 4. Global UI Helpers
   const showToast = (msg) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 4000);
+    toastTimerRef.current = setTimeout(() => setToastMessage(""), 4000);
   };
 
   const triggerConfirm = (title, message, action) => {
@@ -398,14 +413,62 @@ export default function AppShell({ defaultTab = "dashboard" }) {
 
   if (isProfileLoading) {
     return (
-      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-emerald-light)', borderTopColor: 'var(--color-emerald-deep)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      <div className="app-container" style={{ 
+        display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center',
+        background: 'linear-gradient(135deg, var(--color-sage-light), var(--bg))', position: 'relative', overflow: 'hidden'
+      }}>
+        {/* Glowing orb background */}
+        <div style={{ position: 'absolute', width: '300px', height: '300px', background: 'var(--color-emerald-base)', borderRadius: '50%', filter: 'blur(80px)', opacity: 0.15, animation: 'pulse 3s infinite alternate' }}></div>
+        
+        {/* Glassy card loader */}
+        <div className="glass-panel animate-pop" style={{ 
+          padding: '40px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', 
+          border: '1px solid rgba(40,77,54,0.15)', boxShadow: '0 20px 40px rgba(0,0,0,0.05), inset 0 0 20px rgba(255,255,255,0.5)', zIndex: 1
+        }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px' }}>
+            {/* Sleek Conic Gradient Spinner */}
+            <div style={{ 
+              position: 'absolute', width: '100%', height: '100%', borderRadius: '50%',
+              background: 'conic-gradient(from 0deg, transparent 0%, transparent 20%, var(--color-emerald-base) 100%)',
+              animation: 'spin 1s linear infinite',
+              maskImage: 'radial-gradient(transparent 56%, black 57%)',
+              WebkitMaskImage: 'radial-gradient(transparent 56%, black 57%)'
+            }}></div>
+            {/* Leaf inside */}
+            <div style={{ position: 'absolute', fontSize: '2.2rem', animation: 'pulse 2s infinite' }}>🌿</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h2 style={{ margin: '0 0 8px 0', fontFamily: 'var(--font-header)', color: 'var(--color-emerald-deep)', letterSpacing: '1px' }}>DopaMind</h2>
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-emerald-base)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>Awakening Profile...</span>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ position: 'relative' }}>
+      {/* 🌿 Global Nature Glass Background Layer + Giant Leaves */}
+      <div style={{ 
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden',
+        // Giant Leaves Background Effect - Configurable Density/Visibility
+        backgroundImage: `
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/svg%3E"),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cg transform='scale(-1, 1) translate(-150, 0)'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/g%3E%3C/svg%3E"),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cg transform='scale(1, -1) translate(0, -150)'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/g%3E%3C/svg%3E"),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' opacity='0.85'%3E%3Cg transform='scale(-1, -1) translate(-150, -150)'%3E%3Cpath d='M0,0 Q60,10 130,130' fill='none' stroke='%233f6212' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M20,5 Q70,40 100,70' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M5,20 Q40,70 70,100' fill='none' stroke='%234d7c0f' stroke-width='1' stroke-linecap='round'/%3E%3Cpath d='M10,2 Q25,-5 35,5 Q20,10 10,2' fill='%2365a30d'/%3E%3Cpath d='M45,10 Q60,0 70,15 Q55,25 45,10' fill='%234d7c0f'/%3E%3Cpath d='M80,25 Q100,15 105,35 Q85,45 80,25' fill='%2384cc16'/%3E%3Cpath d='M100,60 Q120,55 120,80 Q100,85 100,60' fill='%2365a30d'/%3E%3Cpath d='M55,25 Q70,15 80,30 Q65,40 55,25' fill='%234d7c0f' opacity='0.8'/%3E%3Cpath d='M85,45 Q100,35 110,50 Q95,60 85,45' fill='%2384cc16' opacity='0.9'/%3E%3C/g%3E%3C/svg%3E")
+        `,
+        backgroundPosition: 'top -5% left -5%, top -5% right -5%, bottom -5% left -5%, bottom -5% right -5%',
+        backgroundRepeat: 'no-repeat',
+        // DENSITY/SIZE CONTROL:
+        backgroundSize: '600px 600px', // Increased size drastically!
+        opacity: 0.12, // VISIBILITY CONTROL: Adjust this to make it more or less visible (0.05 to 0.3)
+      }}>
+        <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '60vw', height: '60vw', background: 'var(--color-emerald-light)', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.15, animation: 'pulse 8s infinite alternate' }}></div>
+        <div style={{ position: 'absolute', bottom: '-20%', right: '-10%', width: '70vw', height: '70vw', background: 'var(--color-sage-light)', borderRadius: '50%', filter: 'blur(150px)', opacity: 0.1, animation: 'pulse 10s infinite alternate-reverse' }}></div>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.05)' }}></div>
+      </div>
+
       {!pendingRecovery && (
         <>
           <SidebarNavigation 
@@ -424,7 +487,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
           />
 
           {/* Main Viewport */}
-          <main className="content-panel">
+          <main className="content-panel" style={{ position: 'relative', zIndex: 1 }}>
             {renderContent()}
           </main>
 

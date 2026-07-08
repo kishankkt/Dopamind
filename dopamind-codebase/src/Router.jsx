@@ -49,6 +49,7 @@ const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 function DashboardRedirect() {
   const [username, setUsername] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [redirectPath, setRedirectPath] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -59,11 +60,16 @@ function DashboardRedirect() {
            setLoading(false);
          });
       } else {
-         window.location.href = '/?auth=true';
+         if (isDesktop) {
+           setRedirectPath('/desktop-login?auth=true');
+         } else {
+           setRedirectPath('/?auth=true');
+         }
       }
     });
   }, []);
   
+  if (redirectPath) return <Navigate to={redirectPath} replace />;
   if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading profile...</div>;
   return <Navigate to={`/${username}/dashboard`} replace />;
 }
@@ -99,6 +105,7 @@ export default function Router() {
 
         {/* Redirects */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
+        <Route path="/desktop-login" element={<AppShell defaultTab="dashboard" />} />
         
         {/* Username Routing (placed at bottom to prevent colliding with static paths) */}
         <Route path="/:username/dashboard" element={<ProtectedRoute><AppShell defaultTab="dashboard" /></ProtectedRoute>} />
