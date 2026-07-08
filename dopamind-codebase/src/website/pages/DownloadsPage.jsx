@@ -21,8 +21,8 @@ const BASE_DL = '/downloads'; // served from public/downloads/
 const OS_DATA = {
   windows: {
     name: 'Windows', icon: <Icons.Windows />, archs: [
-      { id: 'x64_exe', label: 'Windows x64 (.exe)', file: 'DopaMind_0.0.9_x64_en-US.msi' },
-      { id: 'x64_msi', label: 'Windows x64 (.msi)', file: 'DopaMind_0.0.9_x64_en-US.msi' },
+      { id: 'x64_exe', label: 'Windows x64 (.exe)', file: 'DopaMind_0.1.0_x64_en-US.msi' },
+      { id: 'x64_msi', label: 'Windows x64 (.msi)', file: 'DopaMind_0.1.0_x64_en-US.msi' },
       { id: 'arm64',   label: 'Windows ARM64 (.msi)', file: 'DopaMind_arm64_Setup.msi', comingSoon: true },
     ]
   },

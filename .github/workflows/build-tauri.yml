@@ -44,8 +44,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: ./dopamind-codebase
-          tagName: v0.1.0
-          releaseName: 'DopaMind v0.1.0'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'DopaMind ${{ github.ref_name }}'
           releaseBody: 'Automated release of DopaMind desktop apps.'
           releaseDraft: false
           prerelease: false
@@ -77,7 +77,7 @@ jobs:
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0
+          tag_name: ${{ github.ref_name }}
           files: dopamind-codebase/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
