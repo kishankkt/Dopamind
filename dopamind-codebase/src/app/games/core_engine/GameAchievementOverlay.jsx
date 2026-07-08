@@ -14,11 +14,11 @@
 import React, { useEffect, useState } from 'react';
 
 const ACHIEVEMENT_CONFIG = {
-  streak:    { emoji: '🔥', label: 'On Fire!',         color: '#f97316', bg: 'rgba(249,115,22,0.18)' },
-  levelup:   { emoji: '⬆️', label: 'Level Up!',        color: '#10b981', bg: 'rgba(16,185,129,0.18)' },
-  personal:  { emoji: '🏆', label: 'Personal Best!',   color: '#eab308', bg: 'rgba(234,179,8,0.18)'  },
-  perfect:   { emoji: '⭐', label: 'Perfect Round!',   color: '#8b5cf6', bg: 'rgba(139,92,246,0.18)' },
-  milestone: { emoji: '🎯', label: 'Milestone!',       color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
+  streak: { emoji: '🔥', label: 'On Fire!', color: '#f97316', bg: 'rgba(249,115,22,0.18)' },
+  levelup: { emoji: '⬆️', label: 'Level Up!', color: '#10b981', bg: 'rgba(16,185,129,0.18)' },
+  personal: { emoji: '🏆', label: 'Personal Best!', color: '#eab308', bg: 'rgba(234,179,8,0.18)' },
+  perfect: { emoji: '⭐', label: 'Perfect Round!', color: '#8b5cf6', bg: 'rgba(139,92,246,0.18)' },
+  milestone: { emoji: '🎯', label: 'Milestone!', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
 };
 
 function ConfettiBurst({ color }) {
@@ -94,7 +94,7 @@ function AchievementToast({ type, subtitle, onDone }) {
       <span style={{ fontSize: '1.4rem', lineHeight: 1, zIndex: 1 }}>{cfg.emoji}</span>
       <div style={{ zIndex: 1 }}>
         <div style={{ fontWeight: 900, fontSize: '0.88rem', color: cfg.color, lineHeight: 1.1 }}>{cfg.label}</div>
-        {subtitle && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{subtitle}</div>}
+        {subtitle && <div style={{ fontSize: '0.7rem', color: 'var(--text-main)', opacity: 0.55, marginTop: 2 }}>{subtitle}</div>}
       </div>
     </div>
   );

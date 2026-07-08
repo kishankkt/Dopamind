@@ -23,11 +23,11 @@ import './UniversalGamePlayer.css';
 const DEFAULT_SESSION_SECS = 60; // 1 minute default
 
 const CAT_COLOR = {
-  'Quick Reflexes':    '#f97316',
-  'Stay Sharp':        '#3b82f6',
+  'Quick Reflexes': '#f97316',
+  'Stay Sharp': '#3b82f6',
   'Remember & Recall': '#8b5cf6',
-  'Think & Solve':     '#10b981',
-  'Word Power':        '#ec4899',
+  'Think & Solve': '#10b981',
+  'Word Power': '#ec4899',
   'Sort & Prioritize': '#eab308',
 };
 
@@ -48,28 +48,28 @@ export default function UniversalGamePlayer({
   isProcessing,        // true while AppShell saving
   children,
 }) {
-  const gameInfo  = getGame(gameId);
-  const catColor  = CAT_COLOR[gameInfo?.category] || 'var(--color-emerald-base)';
+  const gameInfo = getGame(gameId);
+  const catColor = CAT_COLOR[gameInfo?.category] || 'var(--color-emerald-base)';
 
   // HUD live state
-  const [hudScore,    setHudScore]    = useState(0);
+  const [hudScore, setHudScore] = useState(0);
   const [hudTimeLeft, setHudTimeLeft] = useState(gameInfo?.durationSeconds || null);
-  const [hudLevel,    setHudLevel]    = useState(currentLevel || 1);
+  const [hudLevel, setHudLevel] = useState(currentLevel || 1);
 
   // Session timer
-  const [sessionSecs, setSessionSecs]  = useState(DEFAULT_SESSION_SECS);
-  const sessionRef                     = useRef(null);
+  const [sessionSecs, setSessionSecs] = useState(DEFAULT_SESSION_SECS);
+  const sessionRef = useRef(null);
 
   // Player state
-  const [soundEnabled,      setSoundEnabled]    = useState(true);
-  const [gameState,         setGameState]       = useState('pregame');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [gameState, setGameState] = useState('pregame');
   const [hudExtendedStats, setHudExtendedStats] = useState({ accuracy: 0, wrong: 0, missed: 0 });
   const [showExtendedStats, setShowExtendedStats] = useState(false);
-  const [sessionStats,      setSessionStats]    = useState(null);
-  const [showQuitConfirm,   setShowQuitConfirm] = useState(false);
+  const [sessionStats, setSessionStats] = useState(null);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [chosenSessionSecs, setChosenSessionSecs] = useState(DEFAULT_SESSION_SECS);
   const [chosenGameConfig, setChosenGameConfig] = useState({});
-  const [gameActive,        setGameActive]      = useState(false); // controls isActive passed to game
+  const [gameActive, setGameActive] = useState(false); // controls isActive passed to game
   const autoCompletedRef = useRef(false); // prevent double-fire
 
   // XP animation
@@ -168,7 +168,7 @@ export default function UniversalGamePlayer({
 
   const handleQuitRequest = () => setShowQuitConfirm(true);
   const handleQuitConfirm = () => { clearInterval(sessionRef.current); setShowQuitConfirm(false); onExitToGym(); };
-  const handleQuitCancel  = () => setShowQuitConfirm(false);
+  const handleQuitCancel = () => setShowQuitConfirm(false);
 
   const restartGame = () => {
     setGameState('pregame');
@@ -207,19 +207,21 @@ export default function UniversalGamePlayer({
   if ((gameState === 'summary' && sessionStats) || isForced) {
     if (isForced && !sessionStats) {
       // Force a minimal stats object from what we know
-      const forced = { score: hudScore, attempts: 0, accuracy_percent: 0, avg_speed_seconds: 0,
+      const forced = {
+        score: hudScore, attempts: 0, accuracy_percent: 0, avg_speed_seconds: 0,
         level_reached: currentLevel || 1, duration_seconds: chosenSessionSecs,
-        streak_in_game: 0, perfect_rounds: 0, game_specific: {} };
+        streak_in_game: 0, perfect_rounds: 0, game_specific: {}
+      };
       if (onGameComplete) onGameComplete(gameId, forced);
     }
     const stats = sessionStats || { score: hudScore, attempts: 0, accuracy_percent: 0, avg_speed_seconds: 0 };
     const accuracy = stats.accuracy_percent || 0;
-    const speed    = parseFloat(stats.avg_speed_seconds) || 0;
-    const score    = stats.score || 0;
+    const speed = parseFloat(stats.avg_speed_seconds) || 0;
+    const score = stats.score || 0;
     const adaptive = engagementResult?.adaptive;
-    const dirIcon  = adaptive?.direction === 'up' ? '↑' : adaptive?.direction === 'down' ? '↓' : '─';
+    const dirIcon = adaptive?.direction === 'up' ? '↑' : adaptive?.direction === 'down' ? '↓' : '─';
     const dirColor = adaptive?.direction === 'up' ? '#10b981' : adaptive?.direction === 'down' ? '#ef4444' : '#94a3b8';
-    const nextLv   = adaptive?.nextLevel || currentLevel || 1;
+    const nextLv = adaptive?.nextLevel || currentLevel || 1;
 
     return (
       <div className="ugp-shell">
@@ -297,8 +299,8 @@ export default function UniversalGamePlayer({
             {accuracy >= 90
               ? 'Outstanding precision. Your neural pathways are firing clean.'
               : accuracy >= 70
-              ? 'Solid performance. Keep pushing for sharper accuracy.'
-              : 'Good effort. Focus on reducing errors to build consistency.'}
+                ? 'Solid performance. Keep pushing for sharper accuracy.'
+                : 'Good effort. Focus on reducing errors to build consistency.'}
           </p>
 
           {/* Actions */}
@@ -306,18 +308,18 @@ export default function UniversalGamePlayer({
             {isProcessing
               ? <div className="ugp-saving">Saving results...</div>
               : <>
-                  <button className="btn-secondary" onClick={restartGame}>
-                    <RotateCcw size={15} /> Again
+                <button className="btn-secondary" onClick={restartGame}>
+                  <RotateCcw size={15} /> Again
+                </button>
+                {onGrow && (
+                  <button className="ugp-grow-btn" onClick={onGrow}>
+                    <Sprout size={16} /> Grow — Next Game
                   </button>
-                  {onGrow && (
-                    <button className="ugp-grow-btn" onClick={onGrow}>
-                      <Sprout size={16} /> Grow — Next Game
-                    </button>
-                  )}
-                  <button className="btn-secondary" onClick={onExitToGym}>
-                    <LayoutGrid size={15} /> Gym
-                  </button>
-                </>
+                )}
+                <button className="btn-secondary" onClick={onExitToGym}>
+                  <LayoutGrid size={15} /> Gym
+                </button>
+              </>
             }
           </div>
         </div>
@@ -355,30 +357,30 @@ export default function UniversalGamePlayer({
               </span>
             )}
           </div>
-          <button onClick={() => setShowExtendedStats(p => !p)} style={{ border: 'none', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: 20, color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8 }}>
+          <button onClick={() => setShowExtendedStats(p => !p)} style={{ border: 'none', background: 'var(--border-subtle)', padding: '6px 12px', borderRadius: 20, color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8 }}>
             {showExtendedStats ? <Eye size={16} /> : <EyeOff size={16} />}
             <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{showExtendedStats ? 'Hide' : 'Unhide'}</span>
           </button>
         </div>
 
         {showExtendedStats && (
-          <div style={{ display: 'flex', gap: 16, width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, fontSize: '0.8rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 16, width: '100%', padding: '10px 14px', background: 'var(--border-subtle)', borderRadius: 12, fontSize: '0.8rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
             <div className="ugp-hud-metric"><span className="ugp-hud-label">Score</span><strong className="ugp-hud-value">{hudScore}</strong></div>
             <div className="ugp-hud-metric"><span className="ugp-hud-label">Level</span><strong className="ugp-hud-value" style={{ color: catColor }}>{hudLevel}</strong></div>
             <div className="ugp-hud-metric"><span className="ugp-hud-label">Accuracy</span><strong className="ugp-hud-value">{hudExtendedStats.accuracy}%</strong></div>
-            <div className="ugp-hud-metric"><span className="ugp-hud-label">Wrong</span><strong className="ugp-hud-value" style={{color: '#ef4444'}}>{hudExtendedStats.wrong}</strong></div>
-            <div className="ugp-hud-metric"><span className="ugp-hud-label">Missed</span><strong className="ugp-hud-value" style={{color: '#f59e0b'}}>{hudExtendedStats.missed}</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Wrong</span><strong className="ugp-hud-value" style={{ color: '#ef4444' }}>{hudExtendedStats.wrong}</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Missed</span><strong className="ugp-hud-value" style={{ color: '#f59e0b' }}>{hudExtendedStats.missed}</strong></div>
             <div className="ugp-hud-metric"><span className="ugp-hud-label">Time</span><strong className="ugp-hud-value">{chosenSessionSecs - sessionSecs}s / {chosenSessionSecs}s</strong></div>
           </div>
         )}
       </div>
 
       {/* BOX 3: Rules / Info Container */}
-      <div style={{
+      <div className="ugp-rules" style={{
         margin: '0 24px 8px 24px',
         padding: '12px 16px',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.04)',
+        background: 'var(--border-subtle)',
+        border: '1px solid var(--border-subtle)',
         borderRadius: 16,
         textAlign: 'center',
       }}>
@@ -398,15 +400,15 @@ export default function UniversalGamePlayer({
           {React.Children.map(children, child =>
             React.isValidElement(child)
               ? React.cloneElement(child, {
-                  isActive: gameActive,
-                  sessionSeconds: chosenSessionSecs,
-                  gameConfig: chosenGameConfig,
-                  onComplete: handleComplete,
-                  onQuit: handleQuitRequest,
-                  onHudUpdate: handleHudUpdate,
-                  soundEnabled,
-                  level: currentLevel,
-                })
+                isActive: gameActive,
+                sessionSeconds: chosenSessionSecs,
+                gameConfig: chosenGameConfig,
+                onComplete: handleComplete,
+                onQuit: handleQuitRequest,
+                onHudUpdate: handleHudUpdate,
+                soundEnabled,
+                level: currentLevel,
+              })
               : child
           )}
         </div>

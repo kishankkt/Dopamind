@@ -31,6 +31,11 @@
   background: var(--bg);
   box-sizing: border-box;
   transition: background-color 0.3s ease, color 0.3s ease;
+
+  /* Deep Theme Variables for Game Player (Light Mode) */
+  --brand-surface: rgba(253, 251, 247, 0.95);
+  --text-main: var(--color-emerald-deep);
+  --border-subtle: rgba(40, 77, 54, 0.12);
 }
 
 /* 🌙 True Dark Mode Tokens */
@@ -44,6 +49,11 @@
   --border-light: rgba(255, 255, 255, 0.1);
   --shadow-subtle: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+  /* Deep Theme Variables for Game Player (Dark Mode) */
+  --brand-surface: rgba(18, 20, 18, 0.95);
+  --text-main: #ffffff;
+  --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
 body {

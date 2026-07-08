@@ -15,7 +15,6 @@ export function GameScreen({ children }) {
       width: '100%',
       height: '100%',
       flex: 1,
-      overflow: 'hidden',
     }}>
       {children}
     </div>
@@ -68,8 +67,8 @@ export function GameControls({ children, style }) {
       justifyContent: 'center',
       width: '100%',
       padding: '16px',
-      background: 'rgba(255,255,255,0.02)',
-      borderTop: '1px solid rgba(255,255,255,0.05)',
+      background: 'var(--border-subtle)',
+      borderTop: '1px solid var(--border-subtle)',
       borderRadius: '24px 24px 0 0',
       ...style,
     }}>

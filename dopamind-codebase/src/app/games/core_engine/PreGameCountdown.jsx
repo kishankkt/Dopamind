@@ -137,6 +137,7 @@ export default function PreGameCountdown({
         width: '100%',
         maxHeight: '92vh',    // Fix overflow on small screens
         overflowY: 'auto',
+        color: 'var(--text-main)',
         boxShadow: `0 0 80px ${color}22, 0 32px 64px rgba(0,0,0,0.5)`,
         textAlign: 'center',
         animation: 'preGameIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards',
@@ -166,7 +167,7 @@ export default function PreGameCountdown({
             {/* Level */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'rgba(255,255,255,0.05)', borderRadius: 16,
+              background: 'var(--border-subtle)', borderRadius: 16,
               padding: '8px 20px', margin: '16px 0',
             }}>
               <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>Your Level</span>
@@ -204,9 +205,9 @@ export default function PreGameCountdown({
                       onClick={() => setSessionSecs(t.secs)}
                       style={{
                         padding: '8px 14px', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem',
-                        border: `1.5px solid ${sessionSecs === t.secs ? color : 'rgba(255,255,255,0.12)'}`,
+                        border: `1.5px solid ${sessionSecs === t.secs ? color : 'var(--border-subtle)'}`,
                         background: sessionSecs === t.secs ? `${color}22` : 'transparent',
-                        color: sessionSecs === t.secs ? color : 'rgba(255,255,255,0.6)',
+                        color: sessionSecs === t.secs ? color : 'var(--text-main)', opacity: sessionSecs === t.secs ? 1 : 0.6,
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
                     >
@@ -227,29 +228,33 @@ export default function PreGameCountdown({
 
             {/* SpeedMatch Minimal Config */}
             {gameInfo?.id === 'speedmatch' && (
-              <div style={{ marginBottom: 24, background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', opacity: 0.6, marginBottom: 4 }}>
-                      <span>Click Cooldown</span>
-                      <span>{(gameConfig.clickCooldownMs/1000).toFixed(1)}s</span>
+              <div style={{ marginBottom: 24, background: 'var(--border-subtle)', borderRadius: 16, border: `1px solid var(--border-subtle)`, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 600 }}>Click Cooldown</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {[0, 300, 1000].map(m => (
+                        <button key={m} onClick={() => setGameConfig({...gameConfig, clickCooldownMs: m})} style={{
+                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
+                          background: gameConfig.clickCooldownMs === m ? `${color}22` : 'transparent',
+                          border: `1px solid ${gameConfig.clickCooldownMs === m ? color : 'var(--border-subtle)'}`,
+                          color: gameConfig.clickCooldownMs === m ? color : 'var(--text-main)', opacity: gameConfig.clickCooldownMs === m ? 1 : 0.6, cursor: 'pointer'
+                        }}>{m === 0 ? 'Off' : m === 300 ? 'Default' : 'Custom'}</button>
+                      ))}
                     </div>
-                    <input type="range" min="0" max="2000" step="100" 
-                      value={gameConfig.clickCooldownMs} 
-                      onChange={e => setGameConfig({...gameConfig, clickCooldownMs: Number(e.target.value)})}
-                      style={{ width: '100%', accentColor: color, height: 4 }}
-                    />
                   </div>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', opacity: 0.6, marginBottom: 4 }}>
-                      <span>Card Time Limit</span>
-                      <span>{(gameConfig.cardTimeLimitMs/1000).toFixed(1)}s</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
+                    <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 600 }}>Card Time Limit</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {[0, 3000, 5000].map(m => (
+                        <button key={m} onClick={() => setGameConfig({...gameConfig, cardTimeLimitMs: m})} style={{
+                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
+                          background: gameConfig.cardTimeLimitMs === m ? `${color}22` : 'transparent',
+                          border: `1px solid ${gameConfig.cardTimeLimitMs === m ? color : 'var(--border-subtle)'}`,
+                          color: gameConfig.cardTimeLimitMs === m ? color : 'var(--text-main)', opacity: gameConfig.cardTimeLimitMs === m ? 1 : 0.6, cursor: 'pointer'
+                        }}>{m === 0 ? 'Off' : m === 3000 ? 'Default' : 'Custom'}</button>
+                      ))}
                     </div>
-                    <input type="range" min="1000" max="5000" step="500" 
-                      value={gameConfig.cardTimeLimitMs} 
-                      onChange={e => setGameConfig({...gameConfig, cardTimeLimitMs: Number(e.target.value)})}
-                      style={{ width: '100%', accentColor: color, height: 4 }}
-                    />
                   </div>
                 </div>
               </div>
@@ -266,8 +271,8 @@ export default function PreGameCountdown({
                 onClick={onCancel}
                 style={{
                   flex: 0, padding: '14px 20px', borderRadius: 16,
-                  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.9rem',
+                  background: 'transparent', border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-main)', opacity: 0.5, cursor: 'pointer', fontSize: '0.9rem',
                 }}
               >
                 Back

@@ -42,7 +42,7 @@ export default function SpeedMatch({
   useEffect(() => { onHudUpdateRef.current = onHudUpdate;  }, [onHudUpdate]);
   useEffect(() => { soundRef.current       = soundEnabled; }, [soundEnabled]);
 
-  const speedLimit = gameConfig.cardTimeLimitMs || Math.max(0.8, difficultyValue || 2.5) * 1000; // ms per card
+  const speedLimit = gameConfig.cardTimeLimitMs !== undefined ? gameConfig.cardTimeLimitMs : Math.max(0.8, difficultyValue || 2.5) * 1000; // ms per card, 0 = off
   const cooldownMs = gameConfig.clickCooldownMs !== undefined ? gameConfig.clickCooldownMs : 300;
 
   // ── endGame ── called by timeout OR isActive→false
@@ -93,24 +93,26 @@ export default function SpeedMatch({
 
     // Auto-wrong if card times out
     clearTimeout(cardTimer.current);
-    cardTimer.current = setTimeout(() => {
-      if (phaseRef.current !== 'playing') return;
-      attRef.current++;
-      missedRef.current++;
-      streakRef.current = 0;
-      setFeedback('incorrect');
-      if (soundRef.current) playGameSound('speedmatch', 'error');
-      
-      const acc = Math.round(scoreRef.current / attRef.current * 100);
-      onHudUpdateRef.current?.({
-        score: scoreRef.current,
-        stats: { accuracy: acc, wrong: wrongRef.current, missed: missedRef.current }
-      });
+    if (speedLimit > 0) {
+      cardTimer.current = setTimeout(() => {
+        if (phaseRef.current !== 'playing') return;
+        attRef.current++;
+        missedRef.current++;
+        streakRef.current = 0;
+        setFeedback('incorrect');
+        if (soundRef.current) playGameSound('speedmatch', 'error');
+        
+        const acc = Math.round(scoreRef.current / attRef.current * 100);
+        onHudUpdateRef.current?.({
+          score: scoreRef.current,
+          stats: { accuracy: acc, wrong: wrongRef.current, missed: missedRef.current }
+        });
 
-      setTimeout(() => {
-        if (phaseRef.current === 'playing') nextCard(next);
-      }, 200);
-    }, speedLimit);
+        setTimeout(() => {
+          if (phaseRef.current === 'playing') nextCard(next);
+        }, 200);
+      }, speedLimit);
+    }
   };
 
   // ── handleDecision ──
@@ -208,7 +210,7 @@ export default function SpeedMatch({
           height: 'min(220px, 52vw)',
           borderRadius: 28,
           background: correct   ? 'rgba(16,185,129,0.15)'
-            : incorrect ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
+            : incorrect ? 'rgba(239,68,68,0.10)' : 'var(--border-subtle)',
           border: `2px solid ${correct ? 'var(--color-emerald-base)' : incorrect ? 'var(--color-error-coral)' : 'var(--border)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 'clamp(4.5rem, 16vw, 7rem)',
@@ -228,8 +230,8 @@ export default function SpeedMatch({
         )}
         
         <div style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          background: 'var(--border-subtle)',
+          border: '1px solid var(--border-subtle)',
           padding: '8px 16px',
           borderRadius: 20,
           display: 'flex',
@@ -241,7 +243,7 @@ export default function SpeedMatch({
             Does this match the <strong style={{ color: 'var(--color-emerald-base)' }}>PREVIOUS</strong> shape?
           </p>
           <div style={{ opacity: 0.4, fontSize: '0.7rem' }}>
-            {(speedLimit / 1000).toFixed(1)}s per card · ← YES &nbsp; NO →
+            {speedLimit > 0 ? `${(speedLimit / 1000).toFixed(1)}s per card · ` : 'Untimed · '}← YES &nbsp; NO →
           </div>
         </div>
       </GameFooterInfo>
