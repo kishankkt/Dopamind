@@ -159,12 +159,39 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     }
   };
 
-  // 1. Authentication Listener + Session Tracker
+  // 1. Authentication Listener + Session Tracker + Deep Link Interceptor
   useEffect(() => {
     if (fingerprint) {
       setSession({ user: { id: fingerprint, email: "Trial Guest", isTrial: true } });
       setIsProfileLoading(false);
       return;
+    }
+
+    // Intercept Deep Links for Tauri Desktop OAuth
+    let unlistenDeepLink = null;
+    if (isDesktop) {
+      import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
+        onOpenUrl(async (urls) => {
+          for (const url of urls) {
+            if (url.includes('access_token=')) {
+              setIsProfileLoading(true); // show loader immediately
+              const hash = url.split('#')[1];
+              if (hash) {
+                const params = new URLSearchParams(hash);
+                const access_token = params.get('access_token');
+                const refresh_token = params.get('refresh_token');
+                if (access_token && refresh_token) {
+                  await supabase.auth.setSession({ access_token, refresh_token });
+                  showToast("Desktop Authentication Successful! 🎉");
+                  // Supabase auth listener will handle the rest
+                }
+              }
+            }
+          }
+        }).then(unlisten => {
+          unlistenDeepLink = unlisten;
+        }).catch(err => console.warn("Failed to register deep link listener:", err));
+      }).catch(err => console.warn("Deep link plugin not available:", err));
     }
 
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
@@ -199,6 +226,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     return () => {
       if (subscription) subscription.unsubscribe();
       SessionTracker.end();
+      if (unlistenDeepLink) unlistenDeepLink();
     };
   }, [fingerprint, username]);
 
