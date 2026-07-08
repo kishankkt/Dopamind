@@ -117,15 +117,23 @@
 
 
 
-/* ── Shell Container ── */
+/* ── Shell Container (Premium Glassy) ── */
 .ugp-shell {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 60px);
-  max-width: 900px;
+  height: calc(100vh - 60px);
+  max-width: 680px;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 0 40px 0;
+  padding: 0;
   animation: ugpFadeIn 0.25s ease;
+  overflow: hidden;
+  background: var(--brand-surface, rgba(18,20,18,0.92));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 32px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 @keyframes ugpFadeIn {
@@ -138,69 +146,79 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(18, 18, 18, 0.6);
   position: sticky;
   top: 0;
   z-index: 10;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .ugp-back-btn,
 .ugp-sound-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text-muted);
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 50%;
+  color: var(--text-main);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
 }
 .ugp-back-btn:hover,
 .ugp-sound-btn:hover {
-  background: var(--brand-surface);
-  color: var(--text-main);
-  border-color: var(--color-emerald-base);
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.05);
+  border-color: rgba(255,255,255,0.1);
 }
-.ugp-sound-btn { padding: 8px; }
+.ugp-sound-btn {
+  width: 44px; 
+  height: 44px;
+}
 
 .ugp-header-center {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  flex: 1;
+  text-align: center;
 }
 
 .ugp-game-title {
   font-family: var(--font-header);
-  font-size: 1.1rem;
-  font-weight: 800;
+  font-size: 1.25rem;
+  font-weight: 900;
   color: var(--text-main);
   margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .ugp-category-badge {
   font-size: 0.7rem;
-  font-weight: 700;
-  padding: 3px 10px;
+  font-weight: 800;
+  padding: 4px 12px;
   border-radius: 20px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* ── Live HUD ── */
 .ugp-hud {
   display: flex;
   justify-content: center;
-  gap: 32px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  gap: 40px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 -10px 20px -10px rgba(0,0,0,0.5);
 }
 
 .ugp-hud-metric {
@@ -240,7 +258,21 @@
 /* ── Game Viewport ── */
 .ugp-game-viewport {
   flex: 1;
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  padding: 0;
+}
+
+.ugp-game-viewport > * {
+  flex: 1;
+  min-height: 0;
+}
+
+@keyframes confettiFly {
+  0%   { opacity: 1; transform: rotate(var(--angle, 0deg)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--angle, 0deg)) translateY(-60px) scale(0.5); }
 }
 
 /* ── Summary Screen ── */

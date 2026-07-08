@@ -1,224 +1,135 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// EchoMap v3 — UGP-owned timer, reverse sequence memory game
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-/**
- * EchoMap — Original DopaMind Game
- * 
- * Concept: A grid of identical-looking tiles. One tile emits a brief "pulse" 
- * (glow). Then another tile pulses. The player must remember the ENTIRE chain 
- * of pulses and replay them in REVERSE order. After each successful reversal, 
- * the chain grows by one more pulse, creating an infinitely scaling reverse-
- * memory test.
- * 
- * The twist: Every 5 levels, the grid ROTATES 90 degrees, forcing the player 
- * to mentally re-map the spatial positions they memorized onto a new orientation.
- * 
- * This has never existed because reverse-recall + spatial rotation has never 
- * been combined in a single game mechanic.
- * 
- * Cognitive Target: Reverse Working Memory + Mental Rotation
- */
-export default function EchoMap({ onComplete, onQuit, onHudUpdate }) {
-  const GRID_SIZE = 4;
-  const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
+const GRID = 16; // 4x4
 
-  const [sequence, setSequence] = useState([]);
-  const [playerInput, setPlayerInput] = useState([]);
-  const [phase, setPhase] = useState("showing"); // showing | input | rotating | success | fail
-  const [activeTile, setActiveTile] = useState(null);
-  const [level, setLevel] = useState(1);
-  const [score, setScore] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  const [rotation, setRotation] = useState(0);
-  const [showingIndex, setShowingIndex] = useState(-1);
+export default function EchoMap({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=2,sessionSeconds=300,
+}) {
+  const seqLen = Math.min(2+Math.floor(level/2), 8);
 
-  const reactionTimes = useRef([]);
-  const inputStartRef = useRef(Date.now());
-  const timeoutRef = useRef(null);
+  const [phase,setPhase]=useState('idle'); // idle|showing|input|feedback
+  const [seq,setSeq]=useState([]);
+  const [activeTile,setActive]=useState(null);
+  const [userInput,setUserInput]=useState([]);
+  const [result,setResult]=useState(null); // 'correct'|'incorrect'
 
-  const generateSequence = useCallback((length) => {
-    const seq = [];
-    for (let i = 0; i < length; i++) {
-      let next;
-      do {
-        next = Math.floor(Math.random() * TOTAL_TILES);
-      } while (seq.length > 0 && seq[seq.length - 1] === next);
-      seq.push(next);
-    }
-    return seq;
-  }, []);
+  const scoreRef=useRef(0);
+  const roundsRef=useRef(0);
+  const streakRef=useRef(0);
+  const maxRef=useRef(0);
+  const sessionRef=useRef(null);
+  const showRef=useRef(null);
+  const gameStart=useRef(Date.now());
 
-  const showSequence = useCallback((seq) => {
-    setPhase("showing");
-    setShowingIndex(-1);
-    let i = 0;
-    const show = () => {
-      if (i < seq.length) {
-        setActiveTile(seq[i]);
-        setShowingIndex(i);
-        timeoutRef.current = setTimeout(() => {
-          setActiveTile(null);
-          i++;
-          timeoutRef.current = setTimeout(show, 300);
-        }, 600);
-      } else {
-        setPhase("input");
-        setPlayerInput([]);
-        inputStartRef.current = Date.now();
-      }
+  useEffect(()=>{
+    if (!isActive){ clearTimeout(sessionRef.current); clearTimeout(showRef.current); return; }
+    scoreRef.current=0; roundsRef.current=0; streakRef.current=0; maxRef.current=0;
+    gameStart.current=Date.now();
+    setTimeout(()=>startRound(),300);
+    sessionRef.current=setTimeout(()=>endGame(),sessionSeconds*1000);
+    return ()=>{ clearTimeout(sessionRef.current); clearTimeout(showRef.current); };
+  },[isActive,sessionSeconds]);
+
+  const startRound=useCallback(()=>{
+    const s=Array.from({length:seqLen},()=>Math.floor(Math.random()*GRID));
+    setSeq(s);
+    setUserInput([]);
+    setResult(null);
+    showSequence(s);
+  },[seqLen,soundEnabled]);
+
+  const showSequence=(s)=>{
+    setPhase('showing');
+    let i=0;
+    const step=()=>{
+      if (i>=s.length){ setActive(null); setPhase('input'); return; }
+      setActive(s[i]);
+      if (soundEnabled) playChime(s[i]%8);
+      showRef.current=setTimeout(()=>{
+        setActive(null);
+        showRef.current=setTimeout(()=>{ i++; step(); },200);
+      },500);
     };
-    timeoutRef.current = setTimeout(show, 800);
-  }, []);
+    showRef.current=setTimeout(step,500);
+  };
 
-  useEffect(() => {
-    const seq = generateSequence(2);
-    setSequence(seq);
-    showSequence(seq);
-    return () => clearTimeout(timeoutRef.current);
-  }, []);
+  const handleTile=(idx)=>{
+    if (phase!=='input') return;
+    // Reverse order — user must enter sequence backwards
+    const reversed=[...seq].reverse();
+    const expected=reversed[userInput.length];
 
-  const handleTileTap = (tileIndex) => {
-    if (phase !== "input") return;
-
-    const reversedSequence = [...sequence].reverse();
-    const expectedIndex = playerInput.length;
-    const expected = reversedSequence[expectedIndex];
-
-    const now = Date.now();
-    reactionTimes.current.push(now - inputStartRef.current);
-    inputStartRef.current = now;
-
-    const newInput = [...playerInput, tileIndex];
-    setPlayerInput(newInput);
-
-    if (tileIndex === expected) {
-      setActiveTile(tileIndex);
-      setTimeout(() => setActiveTile(null), 200);
-
-      if (newInput.length === reversedSequence.length) {
-        // Level complete
-        setScore(s => s + 1);
-        const nextLevel = level + 1;
-        setLevel(nextLevel);
-
-        if (nextLevel % 5 === 0) {
-          // Rotation event
-          setPhase("rotating");
-          setTimeout(() => {
-            setRotation(r => (r + 90) % 360);
-            setTimeout(() => {
-              const newSeq = generateSequence(2 + nextLevel);
-              setSequence(newSeq);
-              showSequence(newSeq);
-            }, 800);
-          }, 600);
-        } else {
-          setPhase("success");
-          setTimeout(() => {
-            const newSeq = generateSequence(2 + nextLevel);
-            setSequence(newSeq);
-            showSequence(newSeq);
-          }, 800);
-        }
+    if (idx===expected){
+      setActive(idx);
+      if (soundEnabled) playChime(idx%8);
+      setTimeout(()=>setActive(null),150);
+      const next=[...userInput,idx];
+      if (next.length===seq.length){
+        scoreRef.current++;
+        roundsRef.current++;
+        streakRef.current++;
+        maxRef.current=Math.max(maxRef.current,streakRef.current);
+        if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+        if (soundEnabled) playChime(10);
+        setResult('correct');
+        setPhase('feedback');
+        setTimeout(()=>startRound(),700);
+      } else {
+        setUserInput(next);
       }
     } else {
-      // Wrong tile — game over
-      setMistakes(m => m + 1);
-      setPhase("fail");
-
-      const totalAttempts = score + mistakes + 1;
-      const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
-      const avgSpeed = reactionTimes.current.length > 0
-        ? (reactionTimes.current.reduce((a, b) => a + b, 0) / reactionTimes.current.length / 1000).toFixed(3)
-        : 0;
-
-      setTimeout(() => {
-        onComplete({
-          score,
-          attempts: totalAttempts,
-          accuracy_percent: accuracy,
-          avg_speed_seconds: avgSpeed
-        });
-      }, 1200);
+      roundsRef.current++;
+      streakRef.current=0;
+      if (soundEnabled) playErrorSound();
+      setResult('incorrect');
+      setPhase('feedback');
+      setTimeout(()=>startRound(),800);
     }
   };
 
-  const getTileStyle = (index) => {
-    const isActive = activeTile === index;
-    const isPlayerTapped = phase === "input" && playerInput.includes(index);
-    return {
-      width: '100%',
-      aspectRatio: '1',
-      borderRadius: '12px',
-      border: isActive ? '2px solid var(--color-emerald-base)' : '2px solid rgba(255,255,255,0.08)',
-      background: isActive
-        ? 'var(--color-emerald-base)'
-        : isPlayerTapped
-          ? 'rgba(52, 211, 153, 0.2)'
-          : 'rgba(255,255,255,0.05)',
-      cursor: phase === "input" ? 'pointer' : 'default',
-      transition: 'all 0.15s ease',
-      boxShadow: isActive ? '0 0 25px rgba(52, 211, 153, 0.5)' : 'none',
-      transform: isActive ? 'scale(0.92)' : 'scale(1)'
-    };
+  const endGame=()=>{
+    clearTimeout(sessionRef.current); clearTimeout(showRef.current);
+    const acc=roundsRef.current>0?Math.round(scoreRef.current/roundsRef.current*100):0;
+    onComplete({
+      score:scoreRef.current,attempts:roundsRef.current,accuracy_percent:acc,
+      avg_speed_seconds:0,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:maxRef.current,perfect_rounds:scoreRef.current,
+      game_specific:{seq_length:seqLen,grid_size:GRID},
+    });
   };
 
+  if (!isActive) return null;
+
   return (
-    <div className="active-game-container">
-      <div style={{ textAlign: 'center', margin: '16px 0', minHeight: '28px' }}>
-        {phase === "showing" && (
-          <span className="animate-pulse" style={{ color: 'var(--color-emerald-base)', fontWeight: 700 }}>
-            Memorize the pulse sequence... ({showingIndex + 1}/{sequence.length})
-          </span>
-        )}
-        {phase === "input" && (
-          <span style={{ color: 'var(--color-accent-gold)', fontWeight: 700 }}>
-            Replay in REVERSE! ({playerInput.length}/{sequence.length})
-          </span>
-        )}
-        {phase === "rotating" && (
-          <span className="animate-pulse" style={{ color: '#ec4899', fontWeight: 700, fontSize: '1.2rem' }}>
-            GRID ROTATION!
-          </span>
-        )}
-        {phase === "success" && (
-          <span style={{ color: 'var(--color-emerald-base)', fontWeight: 700 }}>
-            ✓ Perfect Reversal!
-          </span>
-        )}
-        {phase === "fail" && (
-          <span style={{ color: 'var(--color-error-coral)', fontWeight: 700, fontSize: '1.2rem' }}>
-            Wrong tile. Chain broken.
-          </span>
-        )}
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:12}}>
+      <div style={{fontSize:'0.88rem',fontWeight:700,minHeight:24,textAlign:'center',
+        color:phase==='showing'?'var(--color-emerald-base)':phase==='input'?'var(--color-accent-gold)':result==='correct'?'var(--color-emerald-base)':result==='incorrect'?'var(--color-error-coral)':'var(--text-muted)'}}>
+        {phase==='showing'&&'👀 Memorize the sequence…'}
+        {phase==='input'&&`↩️ Tap in REVERSE order (${seq.length-userInput.length} left)`}
+        {phase==='feedback'&&result==='correct'&&'✓ Perfect!'}
+        {phase==='feedback'&&result==='incorrect'&&'✗ Wrong order'}
+        {phase==='idle'&&'Preparing…'}
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-        gap: '10px',
-        maxWidth: '340px',
-        margin: '0 auto',
-        transform: `rotate(${rotation}deg)`,
-        transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      }}>
-        {Array.from({ length: TOTAL_TILES }).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => handleTileTap(i)}
-            style={getTileStyle(i)}
-            disabled={phase !== "input"}
-          />
+      {/* 4×4 grid */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,maxWidth:'min(300px,80vw)',width:'100%'}}>
+        {Array.from({length:GRID}).map((_,i)=>(
+          <button key={i} onClick={()=>handleTile(i)} style={{
+            aspectRatio:'1/1',
+            background:activeTile===i?'var(--color-emerald-base)':'rgba(255,255,255,0.04)',
+            border:`2px solid ${activeTile===i?'var(--color-emerald-base)':'var(--border)'}`,
+            borderRadius:12,cursor:phase==='input'?'pointer':'default',
+            transition:'all 0.15s',
+            boxShadow:activeTile===i?'0 0 20px rgba(16,185,129,0.4)':'none',
+            transform:activeTile===i?'scale(0.92)':'scale(1)',
+          }}/>
         ))}
       </div>
-
-      <p style={{ textAlign: 'center', opacity: 0.5, marginTop: '16px', fontSize: '0.85rem' }}>
-        Watch the glowing tiles, then tap them back in REVERSE order. Every 5 levels the grid rotates.
-      </p>
-
-      <div className="action-buttons-group" style={{ marginTop: '24px' }}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
-      </div>
+      {maxRef.current>=2&&<div style={{color:'var(--color-emerald-base)',fontWeight:700,fontSize:'0.82rem'}}>🔥 {maxRef.current} in a row</div>}
     </div>
   );
 }

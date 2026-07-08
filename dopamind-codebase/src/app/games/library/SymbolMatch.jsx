@@ -1,135 +1,111 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// SymbolMatch v3 — UGP-owned timer, pure game logic
 import React, { useState, useEffect, useRef } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-const SYMBOLS = ['▲', '▼', '◆', '●', '■', '★', '✚', '✖', '✱', '♥', '♦', '♣', '♠', '✿', '❀', '❃', '❂', '✺', '✵', '✷'];
+const SYMS=['▲','▼','◆','●','■','★','✚','✖','✱','♥','♦','♣','♠','✿','❀'];
 
-export default function SymbolMatch({ onComplete, onQuit, onHudUpdate }) {
-  const [level, setLevel] = useState(1);
-  const [gridA, setGridA] = useState([]);
-  const [gridB, setGridB] = useState([]);
-  const [targetSymbol, setTargetSymbol] = useState(null);
-  const [score, setScore] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  
-  const startTime = useRef(0);
-  const reactionTimes = useRef([]);
+export default function SymbolMatch({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=2,sessionSeconds=45,
+}) {
+  const distCount = Math.min(Math.max(Math.floor(difficultyValue),1),6)+1;
+  const [target,setTarget]=useState('');
+  const [grid,setGrid]=useState([]);
+  const [feedback,setFb]=useState(null);
 
-  useEffect(() => {
-    generateRound();
-  }, [level]);
+  const scoreRef=useRef(0);
+  const attRef=useRef(0);
+  const streakRef=useRef(0);
+  const maxRef=useRef(0);
+  const sessionRef=useRef(null);
+  const gameStart=useRef(Date.now());
 
-  const generateRound = () => {
-    // Generate two random subsets of symbols
-    const numSymbols = Math.min(6 + level * 2, 16); // Level 1 = 8 symbols per grid
-    
-    // Shuffle all symbols
-    const shuffled = [...SYMBOLS].sort(() => Math.random() - 0.5);
-    
-    // Pick the match
-    const match = shuffled[0];
-    setTargetSymbol(match);
-    
-    // Pick other unique symbols for A and B
-    const othersA = shuffled.slice(1, numSymbols);
-    const othersB = shuffled.slice(numSymbols, numSymbols * 2 - 1);
-    
-    // Construct grids and shuffle positions
-    const newGridA = [...othersA, match].sort(() => Math.random() - 0.5);
-    const newGridB = [...othersB, match].sort(() => Math.random() - 0.5);
-    
-    setGridA(newGridA);
-    setGridB(newGridB);
-    startTime.current = Date.now();
+  useEffect(()=>{
+    if (!isActive){ clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; attRef.current=0; streakRef.current=0; maxRef.current=0;
+    gameStart.current=Date.now();
+    nextRound();
+    sessionRef.current=setTimeout(()=>endGame(),sessionSeconds*1000);
+    return ()=>clearTimeout(sessionRef.current);
+  },[isActive,sessionSeconds]);
+
+  const nextRound=()=>{
+    setFb(null);
+    const pool=[...SYMS].sort(()=>Math.random()-0.5).slice(0,distCount+1);
+    const tgt=pool[0];
+    const distractors=pool.slice(1);
+    const gridSyms=[];
+    const tgtCount=1+Math.floor(Math.random()*2);
+    for (let i=0;i<tgtCount;i++) gridSyms.push(tgt);
+    while (gridSyms.length<8+distCount*2){
+      gridSyms.push(distractors[Math.floor(Math.random()*distractors.length)]);
+    }
+    setTarget(tgt);
+    setGrid(gridSyms.sort(()=>Math.random()-0.5));
   };
 
-  const handleSelection = (symbol) => {
-    if (symbol === targetSymbol) {
-      // Correct
-      const timeTaken = Date.now() - startTime.current;
-      reactionTimes.current.push(timeTaken);
-      setScore(prev => prev + 1);
-      
-      if (level < 5) {
-        setLevel(prev => prev + 1);
-      } else {
-        endGame();
-      }
+  const handleTap=(sym)=>{
+    if (feedback) return;
+    attRef.current++;
+    if (sym===target){
+      scoreRef.current++;
+      streakRef.current++;
+      maxRef.current=Math.max(maxRef.current,streakRef.current);
+      if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+      if (soundEnabled) playChime(scoreRef.current%8);
+      setFb('correct');
+      setTimeout(()=>nextRound(),220);
     } else {
-      // Mistake
-      setMistakes(prev => prev + 1);
+      streakRef.current=0;
+      if (soundEnabled) playErrorSound();
+      setFb('incorrect');
+      setTimeout(()=>nextRound(),300);
     }
   };
 
-  const endGame = () => {
-    const totalAttempts = score + mistakes;
-    const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
-    const avgLatency = reactionTimes.current.length 
-      ? ((reactionTimes.current.reduce((a,b)=>a+b, 0) / reactionTimes.current.length) / 1000).toFixed(2) 
-      : 0;
-
+  const endGame=()=>{
+    clearTimeout(sessionRef.current);
+    const acc=attRef.current>0?Math.round(scoreRef.current/attRef.current*100):0;
     onComplete({
-      score: score,
-      attempts: 5,
-      accuracy_percent: accuracy,
-      avg_speed_seconds: avgLatency
+      score:scoreRef.current,attempts:attRef.current,accuracy_percent:acc,
+      avg_speed_seconds:0,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:maxRef.current,perfect_rounds:0,
+      game_specific:{distractor_count:distCount},
     });
   };
 
+  if (!isActive) return null;
+
+  const cols=Math.ceil(Math.sqrt(grid.length));
+
   return (
-    <div className="active-game-container">
-      <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginBottom: '20px' }}>
-        Find the ONE symbol that exists in BOTH grids!
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:16}}>
+      <p style={{opacity:0.65,fontSize:'0.88rem',margin:0}}>Find all <strong>{target}</strong> symbols</p>
+      <div style={{
+        fontSize:'clamp(2.5rem,10vw,4rem)',padding:'12px 28px',
+        background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',borderRadius:18,
+        color:feedback==='correct'?'var(--color-emerald-base)':feedback==='incorrect'?'var(--color-error-coral)':'var(--text-main)',
+        transition:'color 0.15s',
+      }}>
+        {target}
       </div>
-
-      <div style={{ display: 'flex', gap: '32px', justifyContent: 'center', alignItems: 'center' }}>
-        {/* Grid A */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(gridA.length))}, 1fr)`, 
-          gap: '8px',
-          background: 'var(--bg)',
-          padding: '16px',
-          borderRadius: '16px',
-          border: '1px solid var(--border)'
-        }}>
-          {gridA.map((sym, idx) => (
-            <button 
-              key={`a-${idx}`} 
-              onClick={() => handleSelection(sym)}
-              style={{ width: '45px', height: '45px', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-main)' }}
-            >
-              {sym}
-            </button>
-          ))}
-        </div>
-
-        <h3 style={{ opacity: 0.5 }}>VS</h3>
-
-        {/* Grid B */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(gridB.length))}, 1fr)`, 
-          gap: '8px',
-          background: 'var(--bg)',
-          padding: '16px',
-          borderRadius: '16px',
-          border: '1px solid var(--border)'
-        }}>
-          {gridB.map((sym, idx) => (
-            <button 
-              key={`b-${idx}`} 
-              onClick={() => handleSelection(sym)}
-              style={{ width: '45px', height: '45px', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-main)' }}
-            >
-              {sym}
-            </button>
-          ))}
-        </div>
+      <div style={{
+        display:'grid',gridTemplateColumns:`repeat(${cols},1fr)`,
+        gap:8,maxWidth:'min(360px,86vw)',width:'100%',
+      }}>
+        {grid.map((sym,i)=>(
+          <button key={i} onClick={()=>handleTap(sym)} style={{
+            padding:'10px 4px',fontSize:'clamp(1.2rem,4vw,1.6rem)',
+            background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',
+            borderRadius:12,cursor:'pointer',color:'var(--text-main)',
+            transition:'transform 0.1s',
+          }}>
+            {sym}
+          </button>
+        ))}
       </div>
-
-      <div className="action-buttons-group" style={{marginTop: '40px'}}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
-      </div>
+      {maxRef.current>=3&&<div style={{color:'var(--color-emerald-base)',fontWeight:700,fontSize:'0.82rem'}}>🔥 {maxRef.current} streak</div>}
     </div>
   );
 }

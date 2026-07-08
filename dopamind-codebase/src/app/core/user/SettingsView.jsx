@@ -436,6 +436,71 @@ export default function SettingsView({
           </div>
         </div>
 
+        {/* 💰 Subscription / Plan Card */}
+        <div className="glass-panel settings-card" style={{ padding: '32px', gridColumn: '1 / -1' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 24px 0' }}>
+            <Sparkles size={24} color="var(--color-emerald-base)" /> DopaMind Plan
+          </h2>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {[
+              { name: 'Free', price: '$0 / mo', features: ['15 brain games', '5-min daily sessions', 'Progress tracking', 'Adaptive difficulty'], current: true, badge: 'Your Plan' },
+              { name: 'Growth', price: '$7 / mo', features: ['Everything in Free', 'AI Coach sessions', 'Advanced analytics', 'Priority support'], current: false, badge: 'Coming v2' },
+              { name: 'Team', price: '$15 / mo', features: ['Everything in Growth', 'Team dashboards', 'Bulk coaching', 'Custom reports'], current: false, badge: 'Coming v2' },
+            ].map(plan => (
+              <div key={plan.name} style={{
+                flex: '1 1 220px',
+                padding: '24px',
+                borderRadius: 20,
+                border: `2px solid ${plan.current ? 'var(--color-emerald-base)' : 'var(--border)'}`,
+                background: plan.current ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)',
+                position: 'relative',
+              }}>
+                <div style={{ position: 'absolute', top: -10, right: 16, background: plan.current ? 'var(--color-emerald-base)' : '#374151', color: 'white', borderRadius: 20, padding: '3px 12px', fontSize: '0.7rem', fontWeight: 800 }}>
+                  {plan.badge}
+                </div>
+                <div style={{ fontWeight: 900, fontSize: '1.1rem', marginBottom: 4 }}>{plan.name}</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-emerald-base)', marginBottom: 12 }}>{plan.price}</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {plan.features.map(f => <li key={f} style={{ fontSize: '0.82rem', opacity: 0.8 }}>✓ {f}</li>)}
+                </ul>
+                {!plan.current && (
+                  <button disabled style={{ marginTop: 16, width: '100%', padding: '10px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'not-allowed', fontWeight: 700, opacity: 0.6 }}>
+                    Coming Soon
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 📡 Engagement Channel Cards (v2 Coming Soon) */}
+        <div className="glass-panel settings-card" style={{ padding: '32px', gridColumn: '1 / -1' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 8px 0' }}>
+            <MessageSquare size={24} color="var(--color-emerald-base)" /> Engagement Channels
+          </h2>
+          <p style={{ opacity: 0.6, fontSize: '0.85rem', marginBottom: 24 }}>Connect DopaMind to your preferred channels for reminders and insights.</p>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {[
+              { icon: '✉️', name: 'Email Digest', desc: 'Weekly brain gym summary & streak reminders', v2: true },
+              { icon: '💬', name: 'WhatsApp Bot', desc: 'Daily nudges and streak alerts on WhatsApp', v2: true },
+              { icon: '📱', name: 'Push Notifications', desc: 'Browser & mobile push (active)', v2: false, active: true },
+              { icon: '🔔', name: 'Slack Reminders', desc: 'Team-level brain gym reminders', v2: true },
+            ].map(ch => (
+              <div key={ch.name} style={{ flex: '1 1 200px', padding: '20px', borderRadius: 16, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)', position: 'relative', opacity: ch.v2 ? 0.7 : 1 }}>
+                {ch.v2 && (
+                  <div style={{ position: 'absolute', top: 12, right: 12, background: '#374151', color: '#9ca3af', borderRadius: 20, padding: '2px 10px', fontSize: '0.65rem', fontWeight: 800 }}>v2</div>
+                )}
+                {ch.active && (
+                  <div style={{ position: 'absolute', top: 12, right: 12, background: 'var(--color-emerald-base)', color: 'white', borderRadius: 20, padding: '2px 10px', fontSize: '0.65rem', fontWeight: 800 }}>Active</div>
+                )}
+                <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>{ch.icon}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{ch.name}</div>
+                <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{ch.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {showDeleteModal && (

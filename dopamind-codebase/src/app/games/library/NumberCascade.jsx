@@ -1,155 +1,118 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// NumberCascade v3 — UGP-owned timer, pure game logic
 import React, { useState, useEffect, useRef } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-export default function NumberCascade({ onComplete, onQuit, onHudUpdate }) {
-  const [level, setLevel] = useState(1);
-  const [sequence, setSequence] = useState("");
-  const [userInput, setUserInput] = useState("");
-  const [state, setState] = useState("memorize"); // memorize, input, success, fail
-  const [score, setScore] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  
-  const startTime = useRef(0);
-  const reactionTimes = useRef([]);
+export default function NumberCascade({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=4,sessionSeconds=120,
+}) {
+  const seqLen = Math.min(Math.max(Math.floor(difficultyValue),3),10);
+  const [seq,setSeq]=useState('');
+  const [input,setInput]=useState('');
+  const [phase,setPhase]=useState('show'); // show|type|result
 
-  useEffect(() => {
-    generateSequence(level);
-  }, [level]);
+  const scoreRef=useRef(0);
+  const attRef=useRef(0);
+  const sessionRef=useRef(null);
+  const gameStart=useRef(Date.now());
 
-  const generateSequence = (currentLevel) => {
-    const length = currentLevel + 2;
-    let newSeq = "";
-    for (let i = 0; i < length; i++) {
-      newSeq += Math.floor(Math.random() * 10).toString();
-    }
-    setSequence(newSeq);
-    setUserInput("");
-    setState("memorize");
+  useEffect(()=>{
+    if (!isActive){ clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; attRef.current=0;
+    gameStart.current=Date.now();
+    nextSeq();
+    sessionRef.current=setTimeout(()=>endGame(),sessionSeconds*1000);
+    return ()=>clearTimeout(sessionRef.current);
+  },[isActive,sessionSeconds]);
 
-    // Show for (length * 1000) ms
-    setTimeout(() => {
-      setState("input");
-      startTime.current = Date.now();
-    }, length * 800);
+  const nextSeq=()=>{
+    const digits=Array.from({length:seqLen},()=>Math.floor(Math.random()*10)).join('');
+    setSeq(digits);
+    setInput('');
+    setPhase('show');
+    // Auto-hide after 1.5s per digit (min 2s, max 8s)
+    const showTime=Math.max(2000, seqLen*1500);
+    setTimeout(()=>setPhase('type'),showTime);
   };
 
-  const handleInput = (num) => {
-    if (state !== "input") return;
-    
-    const nextInput = userInput + num;
-    setUserInput(nextInput);
-
-    // Check if the current input prefix matches the reversed sequence
-    const reversedSequence = sequence.split('').reverse().join('');
-    
-    if (reversedSequence.startsWith(nextInput)) {
-      if (nextInput === reversedSequence) {
-        // Full match
-        const timeTaken = Date.now() - startTime.current;
-        reactionTimes.current.push(timeTaken);
-        setState("success");
-        setScore(prev => prev + 1);
-
-        if (level < 5) {
-          setTimeout(() => setLevel(prev => prev + 1), 1000);
-        } else {
-          setTimeout(() => endGame(), 1000);
-        }
+  const handleKey=(k)=>{
+    if (phase!=='type') return;
+    const next=input+k;
+    setInput(next);
+    if (next.length===seq.length){
+      attRef.current++;
+      if (next===seq){
+        scoreRef.current++;
+        if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+        if (soundEnabled) playChime(scoreRef.current%8);
+        setPhase('result');
+        setTimeout(()=>nextSeq(),800);
+      } else {
+        if (soundEnabled) playErrorSound();
+        setPhase('result');
+        setTimeout(()=>endGame(),1200);
       }
-    } else {
-      // Mistake
-      setState("fail");
-      setMistakes(prev => prev + 1);
-      setTimeout(() => generateSequence(level), 1500);
     }
   };
 
-  const handleDelete = () => {
-    if (state !== "input" || userInput.length === 0) return;
-    setUserInput(prev => prev.slice(0, -1));
-  };
-
-  const endGame = () => {
-    const totalAttempts = score + mistakes;
-    const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
-    const avgLatency = reactionTimes.current.length 
-      ? ((reactionTimes.current.reduce((a,b)=>a+b, 0) / reactionTimes.current.length) / 1000).toFixed(2) 
-      : 0;
-
+  const endGame=()=>{
+    clearTimeout(sessionRef.current);
+    const acc=attRef.current>0?Math.round(scoreRef.current/attRef.current*100):0;
     onComplete({
-      score: score,
-      attempts: 5,
-      accuracy_percent: accuracy,
-      avg_speed_seconds: avgLatency
+      score:scoreRef.current,attempts:attRef.current,accuracy_percent:acc,
+      avg_speed_seconds:0,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:scoreRef.current,perfect_rounds:scoreRef.current,
+      game_specific:{seq_length:seqLen},
     });
   };
 
+  if (!isActive) return null;
+
+  const correct=phase==='result'&&input===seq;
+  const wrong=phase==='result'&&input!==seq;
+
   return (
-    <div className="active-game-container">
-      <div className="card-stage-container" style={{ height: '200px', flexDirection: 'column' }}>
-        {state === "memorize" && (
-          <>
-            <h2 style={{ fontSize: '3rem', letterSpacing: '8px', margin: '0' }}>{sequence}</h2>
-            <p style={{ opacity: 0.6, marginTop: '16px' }}>Memorize the sequence...</p>
-          </>
-        )}
-
-        {state === "input" && (
-          <>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              {sequence.split('').map((_, idx) => (
-                <div 
-                  key={idx} 
-                  style={{
-                    width: '40px', height: '50px',
-                    borderBottom: '3px solid var(--border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '2rem', fontWeight: 'bold'
-                  }}
-                >
-                  {userInput[idx] || ""}
-                </div>
-              ))}
-            </div>
-            <p style={{ opacity: 0.6, margin: '0', color: 'var(--color-emerald-base)', fontWeight: 'bold' }}>Type it in REVERSE order!</p>
-          </>
-        )}
-
-        {state === "success" && <h2 style={{ color: 'var(--color-emerald-base)' }}>Correct!</h2>}
-        {state === "fail" && <h2 style={{ color: 'var(--color-error-coral)' }}>Incorrect... Retrying</h2>}
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:16}}>
+      {/* Sequence display */}
+      <div style={{
+        padding:'20px 28px',borderRadius:22,fontSize:'clamp(1.8rem,6vw,3rem)',
+        fontFamily:'monospace',fontWeight:700,letterSpacing:'0.15em',
+        minWidth:'min(280px,80vw)',textAlign:'center',
+        background:correct?'rgba(16,185,129,0.08)':wrong?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.04)',
+        border:`2px solid ${correct?'var(--color-emerald-base)':wrong?'var(--color-error-coral)':'var(--border)'}`,
+        transition:'all 0.2s',
+      }}>
+        {phase==='show'&&seq}
+        {phase==='type'&&(input||<span style={{opacity:0.25}}>Type the number…</span>)}
+        {phase==='result'&&(correct?'✓ Correct!':'✗ '+seq)}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxWidth: '300px', margin: '24px auto' }}>
-        {[1,2,3,4,5,6,7,8,9].map(num => (
-          <button 
-            key={num} 
-            className="btn-action" 
-            onClick={() => handleInput(num.toString())}
-            style={{ padding: '16px', fontSize: '1.2rem', background: 'var(--bg)', border: '1px solid var(--border)' }}
-          >
-            {num}
-          </button>
-        ))}
-        <button className="btn-action" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}></button>
-        <button 
-          className="btn-action" 
-          onClick={() => handleInput("0")}
-          style={{ padding: '16px', fontSize: '1.2rem', background: 'var(--bg)', border: '1px solid var(--border)' }}
-        >
-          0
-        </button>
-        <button 
-          className="btn-action" 
-          onClick={handleDelete}
-          style={{ padding: '16px', fontSize: '1.2rem', background: 'var(--bg)', border: '1px solid var(--border)' }}
-        >
-          ⌫
-        </button>
-      </div>
+      <p style={{opacity:0.6,fontSize:'0.85rem',margin:0}}>
+        {phase==='show'?'Memorize this number…':phase==='type'?'Type it from memory:':''}
+      </p>
 
-      <div className="action-buttons-group" style={{marginTop: '20px'}}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
-      </div>
+      {/* Numpad */}
+      {phase==='type'&&(
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,maxWidth:'min(240px,70vw)',width:'100%'}}>
+          {[1,2,3,4,5,6,7,8,9,'⌫',0,'✓'].map((k,i)=>(
+            <button key={i} onClick={()=>{
+              if (k==='⌫') setInput(p=>p.slice(0,-1));
+              else if (k==='✓') {}
+              else handleKey(String(k));
+            }} style={{
+              padding:'16px 8px',fontSize:'clamp(1.2rem,4vw,1.5rem)',fontWeight:700,
+              background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',
+              borderRadius:14,cursor:'pointer',color:'var(--text-main)',
+              fontFamily:'var(--font-header)',
+            }}>
+              {k}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{opacity:0.3,fontSize:'0.75rem'}}>Score: {scoreRef.current}</div>
     </div>
   );
 }

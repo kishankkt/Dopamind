@@ -11,13 +11,16 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Volume2, VolumeX, Trophy, RotateCcw, LayoutGrid, Sprout, Timer } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Trophy, RotateCcw, LayoutGrid, Sprout, Timer, Eye, EyeOff } from 'lucide-react';
 import { getGame } from './gameRegistry';
 import { getXPProgress } from '@/app/core/engagement/EngagementEngine';
-import { getLevelLabel } from '@/app/core/engagement/AdaptiveEngine';
+import { getLevelLabel, getDifficultyValue } from '@/app/core/engagement/AdaptiveEngine';
+import GameAchievementOverlay from './GameAchievementOverlay';
+import PreGameCountdown from './PreGameCountdown';
+import { playGameSound, unlockAudio } from './gameSoundEngine';
 import './UniversalGamePlayer.css';
 
-const SESSION_SECS = 5 * 60; // 5-minute recommended per-game session
+const DEFAULT_SESSION_SECS = 60; // 1 minute default
 
 const CAT_COLOR = {
   'Quick Reflexes':    '#f97316',
@@ -36,11 +39,12 @@ function formatTime(secs) {
 
 export default function UniversalGamePlayer({
   gameId,
-  currentLevel,        // int 1-10 — loaded by AppShell from user_game_levels
-  onGameComplete,      // (gameId, stats, engagementResult) => void
+  currentLevel,        // int 1-10
+  gamesPlayed,         // total plays of this game (unlock time selector after 3)
+  onGameComplete,      // (gameId, stats) => void
   onExitToGym,         // () => void
-  onGrow,              // () => void — pick next game by weakest category
-  engagementResult,    // set after AppShell processes DB: { xpEarned, newXP, newLevel, leveledUp, newBadges, isPersonalBest, adaptive }
+  onGrow,              // () => void
+  engagementResult,    // { xpEarned, newXP, newLevel, leveledUp, newBadges, isPersonalBest, adaptive }
   isProcessing,        // true while AppShell saving
   children,
 }) {
@@ -52,25 +56,60 @@ export default function UniversalGamePlayer({
   const [hudTimeLeft, setHudTimeLeft] = useState(gameInfo?.durationSeconds || null);
   const [hudLevel,    setHudLevel]    = useState(currentLevel || 1);
 
-  // Session timer (5 min recommended)
-  const [sessionSecs, setSessionSecs]  = useState(SESSION_SECS);
+  // Session timer
+  const [sessionSecs, setSessionSecs]  = useState(DEFAULT_SESSION_SECS);
   const sessionRef                     = useRef(null);
 
   // Player state
-  const [soundEnabled,    setSoundEnabled]    = useState(true);
-  const [gameState,       setGameState]       = useState('playing');
-  const [sessionStats,    setSessionStats]    = useState(null);
-  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [soundEnabled,      setSoundEnabled]    = useState(true);
+  const [gameState,         setGameState]       = useState('pregame');
+  const [hudExtendedStats, setHudExtendedStats] = useState({ accuracy: 0, wrong: 0, missed: 0 });
+  const [showExtendedStats, setShowExtendedStats] = useState(false);
+  const [sessionStats,      setSessionStats]    = useState(null);
+  const [showQuitConfirm,   setShowQuitConfirm] = useState(false);
+  const [chosenSessionSecs, setChosenSessionSecs] = useState(DEFAULT_SESSION_SECS);
+  const [chosenGameConfig, setChosenGameConfig] = useState({});
+  const [gameActive,        setGameActive]      = useState(false); // controls isActive passed to game
+  const autoCompletedRef = useRef(false); // prevent double-fire
 
   // XP animation
   const [xpAnimValue, setXpAnimValue] = useState(0);
-  const xpAnimRef                     = useRef(null);
+  const xpAnimRef = useRef(null);
 
-  // Start session countdown on mount
-  useEffect(() => {
+  // In-game achievements
+  const [pendingAchievements, setPendingAchievements] = useState([]);
+  const inGameStreakRef = useRef(0);
+  const prevScoreRef = useRef(0);
+
+  // Session timer — starts on pregame confirm, auto-completes on expire
+  const startSessionTimer = (secs) => {
+    autoCompletedRef.current = false;
+    setSessionSecs(secs);
+    clearInterval(sessionRef.current);
     sessionRef.current = setInterval(() => {
-      setSessionSecs(p => (p > 0 ? p - 1 : 0));
+      setSessionSecs(p => {
+        if (p <= 1) {
+          clearInterval(sessionRef.current);
+          // Auto-complete: stop game, play end sound, trigger summary
+          if (!autoCompletedRef.current) {
+            autoCompletedRef.current = true;
+            setGameActive(false); // games respond to isActive=false → call endGame
+            // Give game 600ms to clean up & call onComplete naturally
+            // If game doesn't call onComplete, force summary after 800ms
+            setTimeout(() => {
+              setGameState(s => s === 'playing' ? 'summary_forced' : s);
+            }, 800);
+          }
+          return 0;
+        }
+        // Last 3 seconds: tick beep
+        if (p <= 4 && soundEnabled) unlockAudio();
+        return p - 1;
+      });
     }, 1000);
+  };
+
+  useEffect(() => {
     return () => clearInterval(sessionRef.current);
   }, []);
 
@@ -89,45 +128,94 @@ export default function UniversalGamePlayer({
     }, 40);
   };
 
-  const handleHudUpdate = ({ score, timeLeft, level }) => {
-    if (score    !== undefined) setHudScore(score);
-    if (timeLeft !== undefined) setHudTimeLeft(timeLeft);
-    if (level    !== undefined) setHudLevel(level);
+  const handleHudUpdate = ({ score, level, stats }) => {
+    if (score !== undefined) {
+      prevScoreRef.current = score;
+      setHudScore(score);
+    }
+    if (level !== undefined) setHudLevel(level);
+    if (stats !== undefined) setHudExtendedStats(stats);
   };
 
   const handleComplete = (stats) => {
+    if (gameState === 'summary') return; // prevent double fire
     clearInterval(sessionRef.current);
     setSessionStats(stats);
     setHudScore(stats.score || 0);
+    setGameActive(false);
     setGameState('summary');
+    if (stats.accuracy_percent === 100) {
+      setPendingAchievements(a => [...a, { type: 'perfect', subtitle: '100% accuracy!' }]);
+    }
+    if (soundEnabled) playGameSound(gameId, 'success');
     if (onGameComplete) onGameComplete(gameId, stats);
   };
 
+  const handlePreGameStart = (sessionSeconds, gameConfig = {}) => {
+    setChosenSessionSecs(sessionSeconds);
+    setChosenGameConfig(gameConfig);
+    setSessionSecs(sessionSeconds);
+    setGameState('playing');
+    setGameActive(true);
+    unlockAudio();
+    startSessionTimer(sessionSeconds);
+    if (soundEnabled) playGameSound(gameId, 'start');
+  };
+
+  const handlePreGameCancel = () => {
+    onExitToGym();
+  };
+
   const handleQuitRequest = () => setShowQuitConfirm(true);
-  const handleQuitConfirm = () => { setShowQuitConfirm(false); onExitToGym(); };
+  const handleQuitConfirm = () => { clearInterval(sessionRef.current); setShowQuitConfirm(false); onExitToGym(); };
   const handleQuitCancel  = () => setShowQuitConfirm(false);
 
   const restartGame = () => {
-    setGameState('playing');
+    setGameState('pregame');
+    setGameActive(false);
     setSessionStats(null);
     setHudScore(0);
-    setHudTimeLeft(gameInfo?.durationSeconds || null);
     setHudLevel(currentLevel || 1);
     setXpAnimValue(0);
-    setSessionSecs(SESSION_SECS);
-    clearInterval(sessionRef.current);
-    sessionRef.current = setInterval(() => {
-      setSessionSecs(p => (p > 0 ? p - 1 : 0));
-    }, 1000);
+    setChosenSessionSecs(DEFAULT_SESSION_SECS);
+    setPendingAchievements([]);
+    prevScoreRef.current = 0;
+    autoCompletedRef.current = false;
   };
 
   if (!gameInfo) return null;
 
+  // ─── PRE-GAME SCREEN ────────────────────────────────────────────
+  if (gameState === 'pregame') {
+    const diffVal = getDifficultyValue(gameInfo, currentLevel || 1);
+    return (
+      <PreGameCountdown
+        gameInfo={gameInfo}
+        level={currentLevel || 1}
+        difficultyValue={diffVal}
+        gamesPlayed={gamesPlayed || 0}
+        defaultSeconds={DEFAULT_SESSION_SECS}
+        onStart={handlePreGameStart}
+        onCancel={handlePreGameCancel}
+      />
+    );
+  }
+
   // ─── SUMMARY SCREEN ─────────────────────────────────────────────
-  if (gameState === 'summary' && sessionStats) {
-    const accuracy = sessionStats.accuracy_percent || 0;
-    const speed    = parseFloat(sessionStats.avg_speed_seconds) || 0;
-    const score    = sessionStats.score || 0;
+  // Also show summary if timer force-expired (session_forced = game didn't fire onComplete)
+  const isForced = gameState === 'summary_forced';
+  if ((gameState === 'summary' && sessionStats) || isForced) {
+    if (isForced && !sessionStats) {
+      // Force a minimal stats object from what we know
+      const forced = { score: hudScore, attempts: 0, accuracy_percent: 0, avg_speed_seconds: 0,
+        level_reached: currentLevel || 1, duration_seconds: chosenSessionSecs,
+        streak_in_game: 0, perfect_rounds: 0, game_specific: {} };
+      if (onGameComplete) onGameComplete(gameId, forced);
+    }
+    const stats = sessionStats || { score: hudScore, attempts: 0, accuracy_percent: 0, avg_speed_seconds: 0 };
+    const accuracy = stats.accuracy_percent || 0;
+    const speed    = parseFloat(stats.avg_speed_seconds) || 0;
+    const score    = stats.score || 0;
     const adaptive = engagementResult?.adaptive;
     const dirIcon  = adaptive?.direction === 'up' ? '↑' : adaptive?.direction === 'down' ? '↓' : '─';
     const dirColor = adaptive?.direction === 'up' ? '#10b981' : adaptive?.direction === 'down' ? '#ef4444' : '#94a3b8';
@@ -238,12 +326,10 @@ export default function UniversalGamePlayer({
   }
 
   // ─── PLAYING SCREEN ──────────────────────────────────────────────
-  const sessionWarning = sessionSecs <= 60;
-  const sessionExpired = sessionSecs === 0;
 
   return (
     <div className="ugp-shell">
-      {/* Header */}
+      {/* Header — back, game name, sound only */}
       <div className="ugp-header">
         <button className="ugp-back-btn" onClick={handleQuitRequest}>
           <ArrowLeft size={20} />
@@ -254,49 +340,77 @@ export default function UniversalGamePlayer({
             {gameInfo.category}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Session timer */}
-          <div className={`ugp-session-timer ${sessionWarning ? 'ugp-session-warn' : ''} ${sessionExpired ? 'ugp-session-done' : ''}`}>
-            <Timer size={12} />
-            <span>{sessionExpired ? 'Done!' : formatTime(sessionSecs)}</span>
+        <button className="ugp-sound-btn" onClick={() => setSoundEnabled(p => !p)}>
+          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+        </button>
+      </div>
+
+      {/* HUD — SCORE + LEVEL + EXTENDED STATS */}
+      <div className="ugp-hud" style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {!showExtendedStats && (
+              <span style={{ fontSize: '0.8rem', opacity: 0.5, fontStyle: 'italic', marginLeft: 8 }}>
+                Live stats hidden for focus
+              </span>
+            )}
           </div>
-          <button className="ugp-sound-btn" onClick={() => setSoundEnabled(p => !p)}>
-            {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          <button onClick={() => setShowExtendedStats(p => !p)} style={{ border: 'none', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: 20, color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: 0.8 }}>
+            {showExtendedStats ? <Eye size={16} /> : <EyeOff size={16} />}
+            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{showExtendedStats ? 'Hide' : 'Unhide'}</span>
           </button>
         </div>
-      </div>
 
-      {/* Live HUD */}
-      <div className="ugp-hud">
-        <div className="ugp-hud-metric">
-          <span className="ugp-hud-label">Score</span>
-          <strong className="ugp-hud-value">{hudScore}</strong>
-        </div>
-        {gameInfo.gameType !== 'endless' && hudTimeLeft !== null && (
-          <div className={`ugp-hud-metric ${hudTimeLeft <= 10 ? 'ugp-hud-warning' : ''}`}>
-            <span className="ugp-hud-label">Time</span>
-            <strong className="ugp-hud-value">{hudTimeLeft}s</strong>
+        {showExtendedStats && (
+          <div style={{ display: 'flex', gap: 16, width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, fontSize: '0.8rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Score</span><strong className="ugp-hud-value">{hudScore}</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Level</span><strong className="ugp-hud-value" style={{ color: catColor }}>{hudLevel}</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Accuracy</span><strong className="ugp-hud-value">{hudExtendedStats.accuracy}%</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Wrong</span><strong className="ugp-hud-value" style={{color: '#ef4444'}}>{hudExtendedStats.wrong}</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Missed</span><strong className="ugp-hud-value" style={{color: '#f59e0b'}}>{hudExtendedStats.missed}</strong></div>
+            <div className="ugp-hud-metric"><span className="ugp-hud-label">Time</span><strong className="ugp-hud-value">{chosenSessionSecs - sessionSecs}s / {chosenSessionSecs}s</strong></div>
           </div>
         )}
-        <div className="ugp-hud-metric">
-          <span className="ugp-hud-label">Level</span>
-          <strong className="ugp-hud-value" style={{ color: catColor }}>{hudLevel}</strong>
-        </div>
       </div>
 
-      {/* Game Viewport — AppShell renders the actual game as children */}
-      <div className="ugp-game-viewport">
-        {children}
+      {/* BOX 3: Rules / Info Container */}
+      <div style={{
+        margin: '0 24px 8px 24px',
+        padding: '12px 16px',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.04)',
+        borderRadius: 16,
+        textAlign: 'center',
+      }}>
+        <p style={{ fontSize: '0.85rem', opacity: 0.6, margin: 0, fontWeight: 500 }}>
+          {gameInfo.description || gameInfo.tagline}
+        </p>
       </div>
 
-      {/* Grow nudge when session timer hits 0 */}
-      {sessionExpired && onGrow && gameState === 'playing' && (
-        <div className="ugp-grow-nudge">
-          <Sprout size={16} />
-          <span>5 min done — try another game?</span>
-          <button className="ugp-grow-btn" onClick={onGrow}>Grow</button>
+      {/* BOX 4 & 5: Game Viewport */}
+      <div className="ugp-game-viewport" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+
+        <GameAchievementOverlay
+          achievements={pendingAchievements}
+          onClear={() => setPendingAchievements([])}
+        />
+        <div className="ugp-game-layer">
+          {React.Children.map(children, child =>
+            React.isValidElement(child)
+              ? React.cloneElement(child, {
+                  isActive: gameActive,
+                  sessionSeconds: chosenSessionSecs,
+                  gameConfig: chosenGameConfig,
+                  onComplete: handleComplete,
+                  onQuit: handleQuitRequest,
+                  onHudUpdate: handleHudUpdate,
+                  soundEnabled,
+                  level: currentLevel,
+                })
+              : child
+          )}
         </div>
-      )}
+      </div>
 
       {/* Quit Confirm */}
       {showQuitConfirm && (

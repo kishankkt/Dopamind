@@ -1,229 +1,162 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// GravitySort v3 — UGP-owned timer, falling orbs sorted by number
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-/**
- * GravitySort — Original DopaMind Game
- * 
- * Concept: Numbered orbs "fall" from the top of the screen at varying speeds.
- * The player must tap them in ascending numerical order before any orb hits the 
- * bottom. The twist: orbs fall at different speeds based on their value — higher 
- * numbers fall faster, creating a constant prioritization conflict between 
- * "what's closest to the ground" vs "what's next in sequence."
- * 
- * As levels progress, the number of simultaneous orbs increases and gravity 
- * accelerates. The game is endless — it only ends when an orb hits the floor.
- * 
- * Cognitive Target: Executive Prioritization & Sustained Selective Attention
- */
-export default function GravitySort({ onComplete, onQuit, onHudUpdate }) {
-  const [orbs, setOrbs] = useState([]);
-  const [nextExpected, setNextExpected] = useState(1);
-  const [score, setScore] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  const [wave, setWave] = useState(1);
-  const [gameOver, setGameOver] = useState(false);
-  const [combo, setCombo] = useState(0);
+export default function GravitySort({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=40,sessionSeconds=300,
+}) {
+  const [orbs,setOrbs]=useState([]);
+  const [nextExp,setNextExp]=useState(1);
+  const [wave,setWave]=useState(1);
+  const [combo,setCombo]=useState(0);
+  const [gameOver,setGameOver]=useState(false);
 
-  const frameRef = useRef(null);
-  const orbIdCounter = useRef(0);
-  const spawnTimer = useRef(null);
-  const startTimeRef = useRef(Date.now());
-  const reactionTimes = useRef([]);
-  const lastTapTime = useRef(Date.now());
-  const containerRef = useRef(null);
-  const gameOverRef = useRef(false);
+  const scoreRef=useRef(0);
+  const mistRef=useRef(0);
+  const waveRef=useRef(1);
+  const nextExpRef=useRef(1);
+  const orbId=useRef(0);
+  const frameRef=useRef(null);
+  const sessionRef=useRef(null);
+  const containerRef=useRef(null);
+  const gameOverRef=useRef(false);
+  const gameStart=useRef(Date.now());
 
-  const ARENA_HEIGHT = 400;
-  const ORB_SIZE = 52;
+  const fallSpeed = (difficultyValue||40) / 1000; // % height per ms
 
-  const spawnOrb = useCallback((num, gravityMultiplier) => {
-    const speed = (0.3 + Math.random() * 0.4 + (num * 0.05)) * gravityMultiplier;
-    const xPos = 10 + Math.random() * 75;
-    orbIdCounter.current += 1;
-    return {
-      id: orbIdCounter.current,
-      num,
-      x: xPos,
-      y: 0,
-      speed,
-      alive: true
-    };
-  }, []);
+  useEffect(()=>{
+    if (!isActive){ cancelAnimationFrame(frameRef.current); clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; mistRef.current=0; waveRef.current=1; nextExpRef.current=1;
+    gameOverRef.current=false;
+    setOrbs([]); setNextExp(1); setWave(1); setCombo(0); setGameOver(false);
+    gameStart.current=Date.now();
 
-  const spawnWave = useCallback((waveNum) => {
-    const count = Math.min(3 + waveNum, 9);
-    const baseNum = (waveNum - 1) * count + 1;
-    const gravityMult = 1 + (waveNum - 1) * 0.12;
-    const newOrbs = [];
-    for (let i = 0; i < count; i++) {
-      const orb = spawnOrb(baseNum + i, gravityMult);
-      orb.y = -(i * 35 + Math.random() * 20);
-      newOrbs.push(orb);
-    }
-    setOrbs(prev => [...prev.filter(o => o.alive), ...newOrbs]);
-  }, [spawnOrb]);
+    setTimeout(()=>spawnWave(1),300);
+    sessionRef.current=setTimeout(()=>triggerEnd(),sessionSeconds*1000);
 
-  useEffect(() => {
-    spawnWave(1);
-    startTimeRef.current = Date.now();
-    lastTapTime.current = Date.now();
-    return () => {
-      cancelAnimationFrame(frameRef.current);
-      clearTimeout(spawnTimer.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    const tick = () => {
+    const animate=(ts)=>{
       if (gameOverRef.current) return;
-      setOrbs(prev => {
-        const updated = prev.map(o => ({
-          ...o,
-          y: o.alive ? o.y + o.speed : o.y
-        }));
-        const fallen = updated.find(o => o.alive && o.y >= ARENA_HEIGHT - ORB_SIZE);
-        if (fallen) {
-          gameOverRef.current = true;
-          setGameOver(true);
-          return updated;
-        }
+      setOrbs(prev=>{
+        const updated=prev.map(o=>{
+          if (!o.alive) return o;
+          const h=containerRef.current?.clientHeight||500;
+          const elapsed=ts-o.spawnTs;
+          const y=elapsed*fallSpeed*(h/100);
+          if (y>h){ // missed — game over
+            if (!gameOverRef.current){
+              gameOverRef.current=true;
+              setTimeout(()=>triggerEnd(),100);
+            }
+            return {...o,alive:false};
+          }
+          return {...o,y};
+        });
         return updated;
       });
-      frameRef.current = requestAnimationFrame(tick);
+      frameRef.current=requestAnimationFrame(animate);
     };
-    frameRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameRef.current);
-  }, []);
+    frameRef.current=requestAnimationFrame(animate);
 
-  const handleOrbTap = (orb) => {
-    if (gameOver || !orb.alive) return;
-    const now = Date.now();
-    if (orb.num === nextExpected) {
-      reactionTimes.current.push(now - lastTapTime.current);
-      lastTapTime.current = now;
-      setScore(s => s + 1);
-      setCombo(c => c + 1);
-      setOrbs(prev => prev.map(o => o.id === orb.id ? { ...o, alive: false } : o));
-      const newExpected = nextExpected + 1;
-      setNextExpected(newExpected);
+    return ()=>{ cancelAnimationFrame(frameRef.current); clearTimeout(sessionRef.current); };
+  },[isActive,sessionSeconds]);
 
-      const aliveOrbs = orbs.filter(o => o.alive && o.id !== orb.id);
-      if (aliveOrbs.length === 0) {
-        const nextWave = wave + 1;
-        setWave(nextWave);
-        setTimeout(() => spawnWave(nextWave), 600);
-      }
-    } else {
-      setMistakes(m => m + 1);
-      setCombo(0);
-    }
-  };
+  const spawnWave=useCallback((w)=>{
+    const count=3+w;
+    const newOrbs=Array.from({length:count},(_,i)=>({
+      id:orbId.current++,
+      num:i+1,
+      alive:true,
+      x:10+Math.random()*75,
+      y:0,
+      spawnTs:performance.now()+i*600,
+    }));
+    setOrbs(newOrbs);
+    nextExpRef.current=1;
+    setNextExp(1);
+  },[]);
 
-  useEffect(() => {
-    if (gameOver) {
-      const totalAttempts = score + mistakes;
-      const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
-      const avgSpeed = reactionTimes.current.length > 0
-        ? (reactionTimes.current.reduce((a, b) => a + b, 0) / reactionTimes.current.length / 1000).toFixed(3)
-        : 0;
-      setTimeout(() => {
-        onComplete({
-          score,
-          attempts: totalAttempts,
-          accuracy_percent: accuracy,
-          avg_speed_seconds: avgSpeed
+  const handleOrb=(orb)=>{
+    if (!orb.alive||gameOverRef.current) return;
+    if (orb.num===nextExpRef.current){
+      scoreRef.current++;
+      if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+      if (soundEnabled) playChime(scoreRef.current%8);
+      setCombo(c=>c+1);
+      setOrbs(p=>p.map(o=>o.id===orb.id?{...o,alive:false}:o));
+      nextExpRef.current++;
+      setNextExp(nextExpRef.current);
+      // Check if wave clear
+      setTimeout(()=>{
+        setOrbs(p=>{
+          if (p.filter(o=>o.alive).length===0){
+            const nw=waveRef.current+1;
+            waveRef.current=nw;
+            setWave(nw);
+            setTimeout(()=>spawnWave(nw),500);
+          }
+          return p;
         });
-      }, 800);
+      },100);
+    } else {
+      mistRef.current++;
+      setCombo(0);
+      if (soundEnabled) playErrorSound();
+      gameOverRef.current=true;
+      setTimeout(()=>triggerEnd(),200);
     }
-  }, [gameOver]);
-
-  const getOrbColor = (num) => {
-    const hue = (num * 37) % 360;
-    return `hsl(${hue}, 70%, 55%)`;
   };
+
+  const triggerEnd=()=>{
+    cancelAnimationFrame(frameRef.current);
+    clearTimeout(sessionRef.current);
+    gameOverRef.current=true;
+    setGameOver(true);
+  };
+
+  useEffect(()=>{
+    if (!gameOver) return;
+    const total=scoreRef.current+mistRef.current;
+    onComplete({
+      score:scoreRef.current,attempts:total,
+      accuracy_percent:total>0?Math.round(scoreRef.current/total*100):0,
+      avg_speed_seconds:0,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:scoreRef.current,perfect_rounds:0,
+      game_specific:{wave_reached:waveRef.current,fall_speed:difficultyValue},
+    });
+  },[gameOver]);
+
+  if (!isActive) return null;
 
   return (
-    <div className="active-game-container">
-      <div 
-        ref={containerRef}
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: `${ARENA_HEIGHT}px`,
-          background: 'rgba(0,0,0,0.3)',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          border: '1px solid var(--border)',
-          marginTop: '16px'
-        }}
-      >
-        {/* Floor danger zone */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          width: '100%',
-          height: '6px',
-          background: 'linear-gradient(90deg, var(--color-error-coral), transparent, var(--color-error-coral))',
-          opacity: 0.8
-        }} />
-
-        {orbs.filter(o => o.alive).map(orb => (
-          <button
-            key={orb.id}
-            onClick={() => handleOrbTap(orb)}
-            style={{
-              position: 'absolute',
-              left: `${orb.x}%`,
-              top: `${orb.y}px`,
-              width: `${ORB_SIZE}px`,
-              height: `${ORB_SIZE}px`,
-              borderRadius: '50%',
-              background: orb.num === nextExpected
-                ? 'var(--color-emerald-base)'
-                : getOrbColor(orb.num),
-              border: orb.num === nextExpected ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
-              color: 'white',
-              fontSize: '1.2rem',
-              fontWeight: '900',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'transform 0.1s',
-              boxShadow: orb.num === nextExpected
-                ? '0 0 20px rgba(52, 211, 153, 0.6)'
-                : '0 4px 12px rgba(0,0,0,0.3)',
-              transform: orb.num === nextExpected ? 'scale(1.1)' : 'scale(1)',
-              zIndex: orb.num === nextExpected ? 10 : 1
-            }}
-          >
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+      <div style={{padding:'6px 16px',display:'flex',justifyContent:'space-between',opacity:0.7,fontSize:'0.82rem'}}>
+        <span>Wave {wave}</span>
+        <span>Tap: <strong style={{color:'var(--color-accent-gold)'}}>{nextExp}</strong></span>
+        {combo>=2&&<span style={{color:'var(--color-emerald-base)'}}>×{combo} combo</span>}
+      </div>
+      <div ref={containerRef} style={{flex:1,position:'relative',overflow:'hidden',background:'rgba(0,0,0,0.1)',borderRadius:16,margin:'0 8px 8px'}}>
+        {orbs.filter(o=>o.alive).map(orb=>(
+          <button key={orb.id} onClick={()=>handleOrb(orb)} style={{
+            position:'absolute',
+            left:`${orb.x}%`,top:`${orb.y||0}px`,
+            transform:'translate(-50%,-50%)',
+            width:'min(52px,13vw)',height:'min(52px,13vw)',
+            borderRadius:'50%',
+            background:`hsl(${orb.num*37},70%,55%)`,
+            border:'2px solid rgba(255,255,255,0.2)',
+            fontSize:'clamp(0.9rem,3vw,1.2rem)',fontWeight:900,
+            color:'white',cursor:'pointer',
+            boxShadow:'0 4px 16px rgba(0,0,0,0.3)',
+            transition:'transform 0.1s',
+          }}>
             {orb.num}
           </button>
         ))}
-
-        {gameOver && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100
-          }}>
-            <h2 style={{ color: 'var(--color-error-coral)', fontSize: '2.5rem', fontWeight: 900 }}>
-              GRAVITY WINS
-            </h2>
-          </div>
-        )}
-      </div>
-
-      <p style={{ textAlign: 'center', opacity: 0.6, marginTop: '12px', fontSize: '0.9rem' }}>
-        Tap orbs in ascending order. Higher numbers fall faster. Don't let any hit the floor.
-      </p>
-
-      <div className="action-buttons-group" style={{ marginTop: '24px' }}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
+        {gameOver&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.6)',borderRadius:16,fontSize:'1.5rem',fontWeight:900,color:'var(--text-main)'}}>
+          Wave {wave} — {scoreRef.current} sorted
+        </div>}
       </div>
     </div>
   );

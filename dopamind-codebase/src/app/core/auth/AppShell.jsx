@@ -286,49 +286,49 @@ export default function AppShell({ defaultTab = "dashboard" }) {
       const gameInfo = getGame(activeGameId);
       const difficultyValue = gameInfo ? getDifficultyValue(gameInfo, currentLevel) : null;
 
-      // Common props injected into every game component
+      // AppShell only provides identity/completion props.
+      // UGP injects: isActive, onHudUpdate, soundEnabled, sessionSeconds via React.cloneElement
       const gameProps = {
-        onComplete:       (stats) => handleGameComplete(activeGameId, stats),
-        onQuit:           () => setGameState('inactive'),
-        onHudUpdate:      () => {},  // UGP owns HUD
+        onComplete:  (stats) => handleGameComplete(activeGameId, stats),
+        onQuit:      () => setGameState('inactive'),
         difficultyValue,
         level: currentLevel,
       };
 
-      const gameComponent = (() => {
-        switch (activeGameId) {
-          case 'speedmatch':    return <SpeedMatch    {...gameProps} isActive={true} onGameComplete={(gId,s)=>handleGameComplete(gId,s)} />;
-          case 'chromashift':   return <ChromaShift   {...gameProps} />;
-          case 'countflow':     return <CountFlow     {...gameProps} />;
-          case 'directiondash': return <DirectionDash {...gameProps} />;
-          case 'echomap':       return <EchoMap       {...gameProps} />;
-          case 'focusgrid':     return <FocusGrid     {...gameProps} />;
-          case 'gravitysort':   return <GravitySort   {...gameProps} />;
-          case 'numbercascade': return <NumberCascade {...gameProps} />;
-          case 'patternpulse':  return <PatternPulse  {...gameProps} />;
-          case 'phaselock':     return <PhaseLock     {...gameProps} />;
-          case 'reactiontap':   return <ReactionTap   {...gameProps} />;
-          case 'symbolmatch':   return <SymbolMatch   {...gameProps} />;
-          case 'timeestimator': return <TimeEstimator {...gameProps} />;
-          case 'weightguess':   return <WeightGuess   {...gameProps} />;
-          case 'wordwarp':      return <WordWarp      {...gameProps} />;
-          default: return (
-            <div className="active-game-container">
-              <div className="game-stage">
-                <h2>{activeGameId}</h2>
-                <p>Module loading...</p>
-                <button className="btn-secondary" onClick={() => setGameState('inactive')}>Exit</button>
-              </div>
-            </div>
-          );
-        }
-      })();
+      const GAME_MAP = {
+        speedmatch:    <SpeedMatch    {...gameProps} />,
+        chromashift:   <ChromaShift   {...gameProps} />,
+        countflow:     <CountFlow     {...gameProps} />,
+        directiondash: <DirectionDash {...gameProps} />,
+        echomap:       <EchoMap       {...gameProps} />,
+        focusgrid:     <FocusGrid     {...gameProps} />,
+        gravitysort:   <GravitySort   {...gameProps} />,
+        numbercascade: <NumberCascade {...gameProps} />,
+        patternpulse:  <PatternPulse  {...gameProps} />,
+        phaselock:     <PhaseLock     {...gameProps} />,
+        reactiontap:   <ReactionTap   {...gameProps} />,
+        symbolmatch:   <SymbolMatch   {...gameProps} />,
+        timeestimator: <TimeEstimator {...gameProps} />,
+        weightguess:   <WeightGuess   {...gameProps} />,
+        wordwarp:      <WordWarp      {...gameProps} />,
+      };
+
+      const gameComponent = GAME_MAP[activeGameId] ?? (
+        <div className="active-game-container">
+          <div className="game-stage">
+            <h2>{activeGameId}</h2>
+            <p>Game not found.</p>
+            <button className="btn-secondary" onClick={() => setGameState('inactive')}>Exit</button>
+          </div>
+        </div>
+      );
 
       return (
         <UniversalGamePlayer
           key={activeGameId}
           gameId={activeGameId}
           currentLevel={currentLevel}
+          gamesPlayed={0}
           onGameComplete={handleGameComplete}
           onExitToGym={() => setGameState('inactive')}
           onGrow={handleGrow}

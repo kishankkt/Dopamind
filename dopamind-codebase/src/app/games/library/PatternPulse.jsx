@@ -1,125 +1,98 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// PatternPulse v3 — UGP-owned timer, pure game logic
 import React, { useState, useEffect, useRef } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-const SHAPE_PAIRS = [
-  { normal: 'O', odd: '0' },
-  { normal: 'l', odd: '1' },
-  { normal: 'I', odd: 'l' },
-  { normal: 'p', odd: 'q' },
-  { normal: 'b', odd: 'd' },
-  { normal: ':', odd: ';' },
-  { normal: 'B', odd: '8' },
-  { normal: 'Z', odd: '2' },
-  { normal: 'S', odd: '5' }
+const PAIRS=[
+  {normal:'O',odd:'0'},{normal:'I',odd:'l'},
+  {normal:'Z',odd:'2'},{normal:'S',odd:'5'},
+  {normal:'B',odd:'8'},{normal:'G',odd:'6'},
+  {normal:'q',odd:'g'},{normal:'n',odd:'u'},
 ];
 
-export default function PatternPulse({ onComplete, onQuit, onHudUpdate }) {
-  const [timeLeft, setTimeLeft] = useState(45);
-  const [score, setScore] = useState(0);
-  const [attempts, setAttempts] = useState(0);
-  
-  const [items, setItems] = useState([]);
-  const [oddIndex, setOddIndex] = useState(-1);
-  const [feedback, setFeedback] = useState(null);
+export default function PatternPulse({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=2,sessionSeconds=120,
+}) {
+  const gridCount = Math.min(36, Math.max(9, (difficultyValue||2)*4));
+  const cols = Math.ceil(Math.sqrt(gridCount));
 
-  const timerRef = useRef(null);
-  const reactionTimes = useRef([]);
-  const lastClickTime = useRef(0);
+  const [items, setItems]     = useState([]);
+  const [oddIdx, setOddIdx]   = useState(-1);
+  const [feedback, setFb]     = useState(null);
 
-  useEffect(() => {
-    generateGrid();
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          endGame();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, []);
+  const scoreRef   = useRef(0);
+  const attRef     = useRef(0);
+  const sessionRef = useRef(null);
+  const gameStart  = useRef(Date.now());
 
-  const generateGrid = () => {
-    const pair = SHAPE_PAIRS[Math.floor(Math.random() * SHAPE_PAIRS.length)];
-    const numItems = 9; // 3x3 grid
-    const targetIdx = Math.floor(Math.random() * numItems);
-    
-    let newItems = Array(numItems).fill(pair.normal);
-    newItems[targetIdx] = pair.odd;
-    
-    setItems(newItems);
-    setOddIndex(targetIdx);
-    lastClickTime.current = Date.now();
+  useEffect(()=>{
+    if (!isActive){ clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; attRef.current=0;
+    gameStart.current=Date.now();
+    nextGrid();
+    sessionRef.current=setTimeout(()=>endGame(),sessionSeconds*1000);
+    return ()=>clearTimeout(sessionRef.current);
+  },[isActive,sessionSeconds]);
+
+  const nextGrid=()=>{
+    setFb(null);
+    const pair=PAIRS[Math.floor(Math.random()*PAIRS.length)];
+    const oi=Math.floor(Math.random()*gridCount);
+    setOddIdx(oi);
+    setItems(Array.from({length:gridCount},(_,i)=>i===oi?pair.odd:pair.normal));
   };
 
-  const handleSelection = (index) => {
-    const now = Date.now();
-    reactionTimes.current.push(now - lastClickTime.current);
-
-    setAttempts(prev => prev + 1);
-    
-    if (index === oddIndex) {
-      setScore(prev => prev + 1);
-      setFeedback('correct');
+  const handleTap=(i)=>{
+    if (feedback) return;
+    attRef.current++;
+    if (i===oddIdx){
+      scoreRef.current++;
+      if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+      if (soundEnabled) playChime(scoreRef.current%8);
+      setFb('correct');
+      setTimeout(()=>nextGrid(),220);
     } else {
-      setFeedback('incorrect');
+      if (soundEnabled) playErrorSound();
+      setFb('incorrect');
+      setTimeout(()=>endGame(),400);
     }
-
-    setTimeout(() => {
-      setFeedback(null);
-      generateGrid();
-    }, 250);
   };
 
-  const endGame = () => {
-    const accuracy = attempts > 0 ? Math.round((score / attempts) * 100) : 0;
-    const avgLatency = reactionTimes.current.length 
-      ? ((reactionTimes.current.reduce((a,b)=>a+b, 0) / reactionTimes.current.length) / 1000).toFixed(2) 
-      : 0;
-
+  const endGame=()=>{
+    clearTimeout(sessionRef.current);
+    const acc=attRef.current>0?Math.round(scoreRef.current/attRef.current*100):0;
     onComplete({
-      score: score,
-      attempts: attempts, 
-      accuracy_percent: accuracy,
-      avg_speed_seconds: avgLatency
+      score:scoreRef.current,attempts:attRef.current,accuracy_percent:acc,
+      avg_speed_seconds:0,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:scoreRef.current,perfect_rounds:scoreRef.current,
+      game_specific:{grid_size:gridCount},
     });
   };
 
-  return (
-    <div className="active-game-container">
-      <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginTop: '10px' }}>
-        Find the odd one out!
-      </div>
+  if (!isActive) return null;
 
-      <div className={`pattern-grid ${feedback}`} style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', maxWidth: '300px', margin: '30px auto'
+  return (
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:14}}>
+      <p style={{opacity:0.65,fontSize:'0.88rem',margin:0}}>Tap the <strong>ODD one</strong> out</p>
+      <div style={{
+        display:'grid',gridTemplateColumns:`repeat(${cols},1fr)`,
+        gap:6,maxWidth:'min(380px,88vw)',width:'100%',
+        background:feedback==='correct'?'rgba(16,185,129,0.06)':feedback==='incorrect'?'rgba(239,68,68,0.06)':'transparent',
+        borderRadius:16,padding:8,transition:'background 0.15s',
       }}>
-        {items.map((char, i) => (
-          <div 
-            key={i} 
-            onClick={() => handleSelection(i)}
-            style={{ 
-              width: '60px', height: '60px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.8rem', fontWeight: 'bold',
-              background: 'var(--bg)',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.1s ease',
-              border: '1px solid var(--border)',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {char}
-          </div>
+        {items.map((ch,i)=>(
+          <button key={i} onClick={()=>handleTap(i)} style={{
+            padding:'6px 2px',fontSize:'clamp(1rem,3vw,1.4rem)',fontWeight:700,
+            background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',
+            borderRadius:10,cursor:'pointer',color:'var(--text-main)',
+            fontFamily:'monospace',
+          }}>
+            {ch}
+          </button>
         ))}
       </div>
-
-      <div className="action-buttons-group" style={{marginTop: '20px'}}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
-      </div>
+      <div style={{opacity:0.4,fontSize:'0.75rem'}}>Score: {scoreRef.current}</div>
     </div>
   );
 }

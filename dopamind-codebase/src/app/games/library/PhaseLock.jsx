@@ -1,245 +1,124 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// PhaseLock v3 — UGP-owned timer, rotating rings tap-to-align game
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-/**
- * PhaseLock — Original DopaMind Game
- * 
- * Concept: Two concentric rings rotate in opposite directions at different speeds.
- * Each ring has a "gate" (a colored gap). The player must tap ONLY when both gates 
- * align — creating a brief window of opportunity. Tapping at the wrong time is a miss.
- * 
- * As levels progress: a third ring appears, speeds change dynamically, and the gates
- * shrink in size, demanding increasingly precise timing and multi-layer attention.
- * 
- * This has never existed because no game has combined multi-ring phase-alignment 
- * with shrinking tolerance windows as a cognitive training mechanic.
- * 
- * Cognitive Target: Temporal Synchronization & Divided Sustained Attention
- */
-export default function PhaseLock({ onComplete, onQuit, onHudUpdate }) {
-  const canvasRef = useRef(null);
-  const frameRef = useRef(null);
-  const gameOverRef = useRef(false);
+const RINGS=[{r:120,w:14},{r:85,w:12},{r:52,w:10}];
+const GATE=0.35; // radians gate width
 
-  const [score, setScore] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  const [level, setLevel] = useState(1);
-  const [gameOver, setGameOver] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-  const [totalTaps, setTotalTaps] = useState(0);
+export default function PhaseLock({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=1,sessionSeconds=300,
+}) {
+  const [angles,setAngles]=useState([0,Math.PI,Math.PI/2]);
+  const [feedback,setFb]=useState(null); // 'hit'|'miss'
+  const [lv,setLv]=useState(1);
 
-  const anglesRef = useRef([0, Math.PI]);
-  const speedsRef = useRef([0.02, -0.015]);
-  const gateWidthRef = useRef(0.35);
-  const scoreRef = useRef(0);
-  const levelRef = useRef(1);
-  const mistakesRef = useRef(0);
-  const reactionTimes = useRef([]);
-  const lastSuccessTime = useRef(Date.now());
+  const scoreRef=useRef(0);
+  const mistRef=useRef(0);
+  const sessionRef=useRef(null);
+  const frameRef=useRef(null);
+  const anglesRef=useRef([0,Math.PI,Math.PI/2]);
+  const speedsRef=useRef([]);
+  const lvRef=useRef(1);
+  const gameStart=useRef(Date.now());
+  const gameOverRef=useRef(false);
+  const svgRef=useRef(null);
 
-  const RING_RADII = [130, 95, 60];
-  const RING_COLORS = ['#34d399', '#f59e0b', '#ec4899'];
-
-  const getNumRings = () => {
-    const lv = levelRef.current;
-    if (lv < 4) return 2;
-    return 3;
+  const initSpeeds=(lv)=>{
+    const base=0.018*(difficultyValue||1);
+    speedsRef.current=[base*(1+lv*0.1),-base*0.7*(1+lv*0.08),base*0.55*(1+lv*0.06)];
   };
 
-  const areGatesAligned = () => {
-    const numRings = getNumRings();
-    const angles = anglesRef.current;
-    const gateWidth = gateWidthRef.current;
+  useEffect(()=>{
+    if (!isActive){ cancelAnimationFrame(frameRef.current); clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; mistRef.current=0; lvRef.current=1;
+    anglesRef.current=[0,Math.PI,Math.PI/2];
+    gameOverRef.current=false;
+    gameStart.current=Date.now();
+    initSpeeds(1); setLv(1); setFb(null);
 
-    for (let i = 0; i < numRings - 1; i++) {
-      const a1 = ((angles[i] % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-      const a2 = ((angles[i + 1] % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-      let diff = Math.abs(a1 - a2);
-      if (diff > Math.PI) diff = 2 * Math.PI - diff;
-      if (diff > gateWidth) return false;
-    }
-    return true;
-  };
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const numRings = getNumRings();
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw rings
-    for (let i = 0; i < numRings; i++) {
-      const radius = RING_RADII[i];
-      const angle = anglesRef.current[i];
-      const gateWidth = gateWidthRef.current;
-
-      // Ring track
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, angle + gateWidth / 2, angle + 2 * Math.PI - gateWidth / 2);
-      ctx.strokeStyle = RING_COLORS[i];
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-      ctx.globalAlpha = 0.6;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // Gate markers
-      const gateStartAngle = angle - gateWidth / 2;
-      const gateEndAngle = angle + gateWidth / 2;
-      for (const ga of [gateStartAngle, gateEndAngle]) {
-        const gx = cx + Math.cos(ga) * radius;
-        const gy = cy + Math.sin(ga) * radius;
-        ctx.beginPath();
-        ctx.arc(gx, gy, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = RING_COLORS[i];
-        ctx.fill();
-      }
-    }
-
-    // Center indicator
-    const aligned = areGatesAligned();
-    ctx.beginPath();
-    ctx.arc(cx, cy, 18, 0, 2 * Math.PI);
-    ctx.fillStyle = aligned ? '#34d399' : 'rgba(255,255,255,0.1)';
-    ctx.fill();
-    if (aligned) {
-      ctx.shadowColor = '#34d399';
-      ctx.shadowBlur = 20;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = 320;
-    canvas.height = 320;
-
-    const tick = () => {
+    const animate=()=>{
       if (gameOverRef.current) return;
-      const numRings = getNumRings();
-      for (let i = 0; i < numRings; i++) {
-        anglesRef.current[i] += speedsRef.current[i];
-      }
-      draw();
-      frameRef.current = requestAnimationFrame(tick);
+      anglesRef.current=anglesRef.current.map((a,i)=>(a+speedsRef.current[i]+Math.PI*2)%(Math.PI*2));
+      setAngles([...anglesRef.current]);
+      frameRef.current=requestAnimationFrame(animate);
     };
-    frameRef.current = requestAnimationFrame(tick);
+    frameRef.current=requestAnimationFrame(animate);
+    sessionRef.current=setTimeout(()=>endGame(),sessionSeconds*1000);
+    return ()=>{ cancelAnimationFrame(frameRef.current); clearTimeout(sessionRef.current); };
+  },[isActive,sessionSeconds]);
 
-    return () => cancelAnimationFrame(frameRef.current);
-  }, [draw]);
+  const isAligned=(a)=>Math.abs(a%(Math.PI*2))<GATE||(Math.PI*2-a%(Math.PI*2))<GATE;
 
-  const advanceLevel = () => {
-    const newLevel = levelRef.current + 1;
-    levelRef.current = newLevel;
-    setLevel(newLevel);
-
-    // Speed up and shrink gates
-    const speedMult = 1 + newLevel * 0.08;
-    speedsRef.current = [0.02 * speedMult, -0.015 * speedMult, 0.012 * speedMult];
-    gateWidthRef.current = Math.max(0.15, 0.35 - newLevel * 0.02);
-  };
-
-  const handleTap = () => {
+  const handleTap=useCallback(()=>{
     if (gameOverRef.current) return;
-    setTotalTaps(t => t + 1);
-    const now = Date.now();
-
-    if (areGatesAligned()) {
-      reactionTimes.current.push(now - lastSuccessTime.current);
-      lastSuccessTime.current = now;
-      scoreRef.current += 1;
-      setScore(scoreRef.current);
-      setFeedback("hit");
-      setTimeout(() => setFeedback(null), 300);
-      advanceLevel();
+    const hit=anglesRef.current.every(isAligned);
+    if (hit){
+      scoreRef.current++;
+      lvRef.current++;
+      setLv(lvRef.current);
+      initSpeeds(lvRef.current);
+      if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+      if (soundEnabled) playChime(scoreRef.current%8);
+      setFb('hit');
+      setTimeout(()=>setFb(null),300);
     } else {
-      mistakesRef.current += 1;
-      setMistakes(mistakesRef.current);
-      setFeedback("miss");
-      setTimeout(() => setFeedback(null), 300);
-
-      if (mistakesRef.current >= 3) {
-        gameOverRef.current = true;
-        setGameOver(true);
-        const total = scoreRef.current + mistakesRef.current;
-        const accuracy = total > 0 ? Math.round((scoreRef.current / total) * 100) : 0;
-        const avgSpeed = reactionTimes.current.length > 0
-          ? (reactionTimes.current.reduce((a, b) => a + b, 0) / reactionTimes.current.length / 1000).toFixed(3)
-          : 0;
-        setTimeout(() => {
-          onComplete({
-            score: scoreRef.current,
-            attempts: total,
-            accuracy_percent: accuracy,
-            avg_speed_seconds: avgSpeed
-          });
-        }, 1000);
+      mistRef.current++;
+      if (soundEnabled) playErrorSound();
+      setFb('miss');
+      setTimeout(()=>setFb(null),300);
+      if (mistRef.current>=3){
+        gameOverRef.current=true;
+        endGame();
       }
     }
+  },[onHudUpdate,soundEnabled]);
+
+  const endGame=()=>{
+    cancelAnimationFrame(frameRef.current);
+    clearTimeout(sessionRef.current);
+    const total=scoreRef.current+mistRef.current;
+    onComplete({
+      score:scoreRef.current,attempts:total,
+      accuracy_percent:total>0?Math.round(scoreRef.current/total*100):0,
+      avg_speed_seconds:0,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:scoreRef.current,perfect_rounds:scoreRef.current,
+      game_specific:{rings_level:lvRef.current},
+    });
   };
+
+  if (!isActive) return null;
+
+  const SIZE=280;
+  const cx=SIZE/2, cy=SIZE/2;
+
+  const ringColor=(i)=>feedback==='hit'?'#10b981':feedback==='miss'?'#ef4444':['#3b82f6','#c084fc','#f97316'][i];
 
   return (
-    <div className="active-game-container">
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginTop: '16px',
-        gap: '16px'
-      }}>
-        <div style={{
-          position: 'relative',
-          borderRadius: '50%',
-          border: feedback === 'hit' ? '3px solid var(--color-emerald-base)' : feedback === 'miss' ? '3px solid var(--color-error-coral)' : '3px solid transparent',
-          transition: 'border-color 0.2s',
-          padding: '4px'
-        }}>
-          <canvas ref={canvasRef} style={{ display: 'block' }} />
-          {gameOver && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <h2 style={{ color: 'var(--color-error-coral)', fontSize: '1.5rem', fontWeight: 900 }}>DESYNC</h2>
-            </div>
-          )}
-        </div>
-
-        <button
-          className="btn-primary"
-          onClick={handleTap}
-          disabled={gameOver}
-          style={{
-            width: '200px',
-            padding: '18px',
-            fontSize: '1.2rem',
-            fontWeight: '800',
-            borderRadius: '16px',
-            boxShadow: feedback === 'hit' ? '0 0 20px rgba(52,211,153,0.4)' : 'none'
-          }}
-        >
-          {gameOver ? 'Game Over' : 'LOCK'}
-        </button>
-      </div>
-
-      <p style={{ textAlign: 'center', opacity: 0.5, marginTop: '16px', fontSize: '0.85rem' }}>
-        Tap LOCK only when the ring gates align. 3 misses and it's over.
-      </p>
-
-      <div className="action-buttons-group" style={{ marginTop: '16px' }}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
-      </div>
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:16}}>
+      <p style={{opacity:0.65,fontSize:'0.88rem',margin:0}}>Align all rings and <strong>TAP!</strong></p>
+      <svg ref={svgRef} width={SIZE} height={SIZE} style={{cursor:'pointer'}} onClick={handleTap}>
+        {/* Gate indicator at top */}
+        {RINGS.map((ring,i)=>{
+          const a=angles[i]||0;
+          const x=cx+ring.r*Math.sin(a);
+          const y=cy-ring.r*Math.cos(a);
+          return (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={ring.r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={ring.w}/>
+              {/* Gate at top */}
+              <path d={`M ${cx} ${cy-ring.r-ring.w/2} A ${ring.r} ${ring.r} 0 0 1 ${cx+0.001} ${cy-ring.r-ring.w/2}`} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={ring.w} strokeLinecap="round"/>
+              {/* Marker */}
+              <circle cx={x} cy={y} r={ring.w/2+2} fill={ringColor(i)} style={{transition:'fill 0.15s'}}/>
+            </g>
+          );
+        })}
+        {/* Center button */}
+        <circle cx={cx} cy={cy} r={26} fill={feedback==='hit'?'rgba(16,185,129,0.3)':feedback==='miss'?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.06)'} stroke="var(--border)" strokeWidth={2} style={{transition:'fill 0.15s'}}/>
+        <text x={cx} y={cy+6} textAnchor="middle" fill="var(--text-main)" fontSize={18} fontWeight={900}>TAP</text>
+      </svg>
+      <div style={{opacity:0.5,fontSize:'0.8rem'}}>Level {lv} &nbsp;|&nbsp; {3-mistRef.current} lives left</div>
     </div>
   );
 }

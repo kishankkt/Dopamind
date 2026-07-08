@@ -1,111 +1,105 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
+// ReactionTap v3 — UGP-owned timer, pure game logic
 import React, { useState, useEffect, useRef } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-export default function ReactionTap({ onComplete, onQuit, onHudUpdate }) {
-  const [level, setLevel] = useState(1);
-  const [state, setState] = useState("waiting"); // waiting, ready, tapped, false_start
-  const [reactionTime, setReactionTime] = useState(null);
-  const [score, setScore] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  
-  const timerRef = useRef(null);
-  const startTime = useRef(0);
-  const reactionTimes = useRef([]);
+export default function ReactionTap({
+  isActive, onComplete, onQuit, onHudUpdate, soundEnabled,
+  level=1, difficultyValue=5, sessionSeconds=60,
+}) {
+  const [state, setState] = useState('waiting'); // waiting|ready|tapped|early
+  const [lastMs, setLastMs]  = useState(null);
+  const [round, setRound]    = useState(1);
 
-  useEffect(() => {
-    startRound();
-    return () => clearTimeout(timerRef.current);
-  }, [level]);
+  const scoreRef   = useRef(0);
+  const mistRef    = useRef(0);
+  const maxRef     = useRef(0);
+  const streakRef  = useRef(0);
+  const times      = useRef([]);
+  const tapStart   = useRef(0);
+  const waitTimer  = useRef(null);
+  const sessionRef = useRef(null);
+  const gameStart  = useRef(Date.now());
 
-  const startRound = () => {
-    setState("waiting");
-    setReactionTime(null);
-    const delay = Math.floor(Math.random() * 3000) + 1500; // 1.5s to 4.5s
-    
-    timerRef.current = setTimeout(() => {
-      setState("ready");
-      startTime.current = Date.now();
-    }, delay);
+  const totalRounds = Math.max(difficultyValue||5, Math.floor(sessionSeconds/12));
+
+  useEffect(()=>{
+    if (!isActive){ clearTimeout(waitTimer.current); clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; mistRef.current=0; streakRef.current=0; maxRef.current=0;
+    times.current=[]; setRound(1); setState('waiting'); setLastMs(null);
+    gameStart.current = Date.now();
+    startWait();
+    sessionRef.current = setTimeout(()=>endGame(), sessionSeconds*1000);
+    return ()=>{ clearTimeout(waitTimer.current); clearTimeout(sessionRef.current); };
+  },[isActive, sessionSeconds]);
+
+  const startWait = ()=>{
+    setState('waiting');
+    setLastMs(null);
+    const delay = 1500 + Math.random()*3000;
+    waitTimer.current = setTimeout(()=>{ setState('ready'); tapStart.current=Date.now(); }, delay);
   };
 
-  const handleTap = () => {
-    if (state === "waiting") {
-      // False start
-      clearTimeout(timerRef.current);
-      setState("false_start");
-      setMistakes(prev => prev + 1);
-      setTimeout(() => startRound(), 1500);
-    } else if (state === "ready") {
-      // Successful tap
-      const endTime = Date.now();
-      const timeTaken = endTime - startTime.current;
-      setReactionTime(timeTaken);
-      reactionTimes.current.push(timeTaken);
-      setState("tapped");
-      setScore(prev => prev + 1);
-
-      if (level < 5) {
-        setTimeout(() => {
-          setLevel(prev => prev + 1);
-        }, 1500);
-      } else {
-        setTimeout(() => endGame(), 1500);
-      }
+  const handleTap = ()=>{
+    if (state==='waiting'){
+      clearTimeout(waitTimer.current);
+      mistRef.current++; streakRef.current=0;
+      if (soundEnabled) playErrorSound();
+      setState('early');
+      setTimeout(()=>startWait(), 1400);
+    } else if (state==='ready'){
+      const ms = Date.now()-tapStart.current;
+      times.current.push(ms);
+      scoreRef.current++; streakRef.current++;
+      maxRef.current=Math.max(maxRef.current,streakRef.current);
+      if (onHudUpdate) onHudUpdate({ score: scoreRef.current });
+      if (soundEnabled) playChime(scoreRef.current%8);
+      setLastMs(ms); setState('tapped');
+      const next = round+1;
+      if (next>totalRounds){ setTimeout(()=>endGame(),900); }
+      else { setRound(next); setTimeout(()=>startWait(),900); }
     }
   };
 
-  const endGame = () => {
-    const totalClicks = score + mistakes;
-    const accuracy = totalClicks > 0 ? Math.round((score / totalClicks) * 100) : 0;
-    const avgLatency = reactionTimes.current.length 
-      ? ((reactionTimes.current.reduce((a,b)=>a+b, 0) / reactionTimes.current.length) / 1000).toFixed(3) 
-      : 0;
-
+  const endGame = ()=>{
+    clearTimeout(waitTimer.current); clearTimeout(sessionRef.current);
+    const total = scoreRef.current+mistRef.current;
+    const avg = times.current.length ? (times.current.reduce((a,b)=>a+b,0)/times.current.length/1000).toFixed(3) : 0;
     onComplete({
-      score: score,
-      attempts: 5,
-      accuracy_percent: accuracy,
-      avg_speed_seconds: avgLatency
+      score:scoreRef.current, attempts:total,
+      accuracy_percent:total>0?Math.round(scoreRef.current/total*100):0,
+      avg_speed_seconds:parseFloat(avg), level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:maxRef.current, perfect_rounds:0,
+      game_specific:{rounds:totalRounds},
     });
   };
 
-  return (
-    <div className="active-game-container">
-      <div className="card-stage-container" style={{ height: '350px' }}>
-        <div 
-          onClick={handleTap}
-          style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'background-color 0.1s ease',
-            backgroundColor: 
-              state === "waiting" ? 'var(--color-error-coral)' : 
-              state === "ready" ? 'var(--color-emerald-base)' : 
-              state === "false_start" ? 'var(--color-amber)' : 'var(--bg)',
-            border: state === "tapped" ? '2px solid var(--border)' : 'none',
-            color: state === "tapped" ? 'var(--text-main)' : 'var(--color-white)',
-            boxShadow: state === "ready" ? '0 0 40px rgba(16, 185, 129, 0.4)' : 'none'
-          }}
-        >
-          <h2 style={{ fontSize: '2.5rem', margin: 0, fontWeight: '800' }}>
-            {state === "waiting" && "Wait for Green..."}
-            {state === "ready" && "TAP NOW!"}
-            {state === "false_start" && "Too Early!"}
-            {state === "tapped" && `${reactionTime} ms`}
-          </h2>
-          {state === "tapped" && <p style={{ opacity: 0.7, marginTop: '8px' }}>Great reflex!</p>}
-        </div>
-      </div>
+  if (!isActive) return null;
 
-      <div className="action-buttons-group" style={{marginTop: '40px'}}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
+  const bg = state==='waiting'?'rgba(239,68,68,0.12)':state==='ready'?'rgba(16,185,129,0.18)':state==='early'?'rgba(234,179,8,0.12)':'rgba(255,255,255,0.04)';
+  const bc = state==='waiting'?'var(--color-error-coral)':state==='ready'?'var(--color-emerald-base)':state==='early'?'#eab308':'var(--border)';
+
+  return (
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:12}}>
+      <div style={{opacity:0.5,fontSize:'0.8rem'}}>Round {round}/{totalRounds}</div>
+      <div onClick={handleTap} style={{
+        width:'min(280px,72vw)',height:'min(280px,72vw)',borderRadius:28,
+        background:bg,border:`2px solid ${bc}`,
+        display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+        cursor:'pointer',transition:'all 0.1s',userSelect:'none',
+        boxShadow:state==='ready'?'0 0 50px rgba(16,185,129,0.3)':'none',
+      }}>
+        <span style={{fontSize:'clamp(2rem,8vw,3rem)',fontWeight:900,color:'var(--text-main)'}}>
+          {state==='waiting'&&'⏳ Wait…'}
+          {state==='ready'&&'⚡ TAP!'}
+          {state==='early'&&'😬 Too early!'}
+          {state==='tapped'&&`${lastMs}ms`}
+        </span>
+        {state==='tapped'&&<span style={{opacity:0.6,marginTop:8,fontSize:'0.88rem'}}>
+          {lastMs<200?'⚡ Lightning!':lastMs<350?'✅ Great!':'💪 Keep going!'}
+        </span>}
       </div>
+      {maxRef.current>=3&&<div style={{color:'var(--color-emerald-base)',fontWeight:700,fontSize:'0.82rem'}}>🔥 {maxRef.current} streak</div>}
     </div>
   );
 }

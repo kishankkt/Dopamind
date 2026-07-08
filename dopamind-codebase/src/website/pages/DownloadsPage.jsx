@@ -16,22 +16,26 @@ const Icons = {
   Android: () => <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.341c-.551 0-.999-.448-.999-.999s.448-.999.999-.999c.551 0 .999.448.999.999.001.551-.448.999-.999.999m-11.046 0c-.551 0-.999-.448-.999-.999s.448-.999.999-.999.999.448.999.999-.448.999-.999.999m11.405-6.02l1.997-3.459a.416.416 0 00-.152-.568.416.416 0 00-.568.152l-2.022 3.503c-1.436-.648-3.133-1.009-4.966-1.009-1.833 0-3.53.361-4.966 1.009l-2.022-3.503a.416.416 0 00-.568-.152.416.416 0 00-.152.568l1.997 3.459C2.689 11.164.344 14.659 0 18.761h24c-.344-4.102-2.689-7.597-6.118-9.44"/></svg>
 };
 
+const BASE_DL = '/downloads'; // served from public/downloads/
+
 const OS_DATA = {
   windows: {
     name: 'Windows', icon: <Icons.Windows />, archs: [
-      { id: 'x64', label: 'Windows x64 (.exe)', file: 'DopaMind_0.1.0_x64-setup.exe' }
+      { id: 'x64_exe', label: 'Windows x64 (.exe)', file: 'DopaMind_Setup.exe', local: true },
+      { id: 'x64_msi', label: 'Windows x64 (.msi)', file: 'DopaMind_Setup.msi', local: true },
+      { id: 'arm64',   label: 'Windows ARM64 (.msi)', file: 'DopaMind_arm64_Setup.msi', local: false, comingSoon: true },
     ]
   },
   mac: {
     name: 'macOS', icon: <Icons.Mac />, archs: [
-      { id: 'silicon', label: 'Apple Silicon (.dmg)', file: 'DopaMind_0.1.0_aarch64.dmg' },
-      { id: 'intel', label: 'Intel (.dmg)', file: 'DopaMind_0.1.0_x64.dmg' }
+      { id: 'silicon', label: 'Apple Silicon (.dmg)',  file: 'DopaMind_0.1.0_aarch64.dmg' },
+      { id: 'intel',   label: 'Intel Mac (.dmg)',      file: 'DopaMind_0.1.0_x64.dmg' },
     ]
   },
   linux: {
     name: 'Linux', icon: <Icons.Linux />, archs: [
-      { id: 'x64', label: 'Linux x64 (.AppImage)', file: 'dopamind_0.1.0_amd64.AppImage' },
-      { id: 'deb', label: 'Debian/Ubuntu (.deb)', file: 'dopamind_0.1.0_amd64.deb' }
+      { id: 'appimage', label: 'Linux x64 (.AppImage)', file: 'dopamind_0.1.0_amd64.AppImage' },
+      { id: 'deb',      label: 'Debian/Ubuntu (.deb)',  file: 'dopamind_0.1.0_amd64.deb' },
     ]
   },
   ios: {
@@ -41,8 +45,8 @@ const OS_DATA = {
   },
   android: {
     name: 'Android', icon: <Icons.Android />, archs: [
-      { id: 'apk', label: 'Direct Download (.apk)', file: 'DopaMind_0.1.0.apk' },
-      { id: 'playstore', label: 'Google Play Store', comingSoon: true }
+      { id: 'playstore', label: 'Google Play Store', comingSoon: true },
+      { id: 'apk',       label: 'Direct APK (.apk)', file: 'DopaMind_0.1.0.apk' },
     ]
   }
 };
@@ -84,20 +88,27 @@ const OsCard = ({ data, recommended, defaultArch }) => {
       {currentArch.comingSoon ? (
         <button 
           className="btn-secondary" 
-          style={{ display: 'block', width: '100%', cursor: 'not-allowed', opacity: 0.7 }}
+          style={{ display: 'block', width: '100%', cursor: 'not-allowed', opacity: 0.6 }}
           disabled
         >
           Coming Soon
         </button>
       ) : (
         <a 
-          href={currentArch.link || `https://github.com/kishankkt/Dopamind/releases/latest/download/${currentArch.file}`} 
+          href={
+            currentArch.link 
+              ? currentArch.link 
+              : currentArch.local 
+                ? `/downloads/${currentArch.file}`
+                : `https://github.com/kishankkt/Dopamind/releases/latest/download/${currentArch.file}`
+          }
           className={recommended ? 'btn-primary' : 'btn-secondary'} 
-          style={{ display: 'block', textDecoration: 'none' }}
-          target={currentArch.link ? "_blank" : "_self"}
+          style={{ display: 'block', textDecoration: 'none', textAlign: 'center' }}
+          target={currentArch.link ? '_blank' : '_self'}
+          download={!currentArch.link}
           rel="noreferrer"
         >
-          {currentArch.link ? 'Get App' : 'Download'}
+          {currentArch.link ? 'Get App' : '⬇ Download'}
         </a>
       )}
     </div>

@@ -1,131 +1,120 @@
-// [UGP-PATCHED] HUD removed — managed by UniversalGamePlayer
-import React, { useState, useRef } from 'react';
+// TimeEstimator v3 — UGP-owned timer, hold-for-duration game
+import React, { useState, useEffect, useRef } from 'react';
+import { playChime, playErrorSound } from '@/app/core/audio/SynthEngine';
 
-const LEVEL_TARGETS = [3500, 5000, 2200, 7800, 4500]; // ms targets
+export default function TimeEstimator({
+  isActive,onComplete,onQuit,onHudUpdate,soundEnabled,
+  level=1,difficultyValue=5,sessionSeconds=300,
+}) {
+  const targetMs=(difficultyValue||5)*1000;
+  const totalRounds=Math.max(5,Math.floor(sessionSeconds/30));
 
-export default function TimeEstimator({ onComplete, onQuit, onHudUpdate }) {
-  const [level, setLevel] = useState(1);
-  const [state, setState] = useState("ready"); // ready, holding, result
-  const [resultTime, setResultTime] = useState(0);
-  const [score, setScore] = useState(0); // number of "perfect" or "good" attempts
-  const [mistakes, setMistakes] = useState(0); // completely off attempts
-  
-  const startTime = useRef(0);
-  const reactionTimes = useRef([]);
+  const [round,setRound]=useState(1);
+  const [phase,setPhase]=useState('ready'); // ready|holding|result
+  const [resultMs,setResultMs]=useState(null);
 
-  const targetMs = LEVEL_TARGETS[level - 1];
-  
-  const handlePointerDown = (e) => {
-    // Prevent default touch actions like text selection or context menus
-    if(e.cancelable) e.preventDefault(); 
-    
-    if (state !== "ready") return;
-    setState("holding");
-    startTime.current = Date.now();
+  const scoreRef=useRef(0);
+  const streakRef=useRef(0);
+  const maxRef=useRef(0);
+  const holdStart=useRef(0);
+  const sessionRef=useRef(null);
+  const gameStart=useRef(Date.now());
+
+  useEffect(()=>{
+    if (!isActive){ clearTimeout(sessionRef.current); return; }
+    scoreRef.current=0; streakRef.current=0; maxRef.current=0;
+    setRound(1); setPhase('ready'); setResultMs(null);
+    gameStart.current=Date.now();
+    sessionRef.current=setTimeout(()=>endGame(),sessionSeconds*1000);
+    return ()=>clearTimeout(sessionRef.current);
+  },[isActive,sessionSeconds]);
+
+  const handleDown=(e)=>{
+    if (phase!=='ready'||e.cancelable) e.preventDefault?.();
+    if (phase!=='ready') return;
+    holdStart.current=Date.now();
+    setPhase('holding');
   };
 
-  const handlePointerUp = (e) => {
-    if(e.cancelable) e.preventDefault();
-    if (state !== "holding") return;
-    
-    const timeTaken = Date.now() - startTime.current;
-    setResultTime(timeTaken);
-    setState("result");
-    
-    const diff = Math.abs(timeTaken - targetMs);
-    const errorMargin = targetMs * 0.15; // 15% error margin is acceptable
-    
-    if (diff <= errorMargin) {
-      setScore(prev => prev + 1);
+  const handleUp=(e)=>{
+    if (e.cancelable) e.preventDefault?.();
+    if (phase!=='holding') return;
+    const held=Date.now()-holdStart.current;
+    setResultMs(held);
+    setPhase('result');
+
+    const diff=Math.abs(held-targetMs);
+    const margin=targetMs*0.15;
+    if (diff<=margin){
+      scoreRef.current++;
+      streakRef.current++;
+      maxRef.current=Math.max(maxRef.current,streakRef.current);
+      if (onHudUpdate) onHudUpdate({score:scoreRef.current});
+      if (soundEnabled) playChime(scoreRef.current%8);
     } else {
-      setMistakes(prev => prev + 1);
+      streakRef.current=0;
+      if (soundEnabled) playErrorSound();
     }
-    
-    reactionTimes.current.push(diff); // Here, "latency" will store their absolute error in ms
-    
-    setTimeout(() => {
-      if (level < 5) {
-        setLevel(prev => prev + 1);
-        setState("ready");
-      } else {
-        endGame();
-      }
-    }, 2500);
+
+    setTimeout(()=>{
+      const nr=round+1;
+      if (nr<=totalRounds){ setRound(nr); setPhase('ready'); setResultMs(null); }
+      else endGame();
+    },1800);
   };
 
-  const endGame = () => {
-    const totalAttempts = score + mistakes;
-    const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
-    
-    // Avg absolute error in seconds
-    const avgError = reactionTimes.current.length 
-      ? ((reactionTimes.current.reduce((a,b)=>a+b, 0) / reactionTimes.current.length) / 1000).toFixed(2) 
-      : 0;
-
+  const endGame=()=>{
+    clearTimeout(sessionRef.current);
     onComplete({
-      score: score,
-      attempts: 5,
-      accuracy_percent: accuracy,
-      avg_speed_seconds: avgError
+      score:scoreRef.current,attempts:round,
+      accuracy_percent:Math.round(scoreRef.current/Math.min(round,totalRounds)*100)||0,
+      avg_speed_seconds:targetMs/1000,level_reached:level,
+      duration_seconds:Math.round((Date.now()-gameStart.current)/1000),
+      streak_in_game:maxRef.current,perfect_rounds:scoreRef.current,
+      game_specific:{target_ms:targetMs,rounds:totalRounds},
     });
   };
 
-  const getResultFeedback = () => {
-    const diff = resultTime - targetMs;
-    const absDiff = Math.abs(diff);
-    
-    if (absDiff <= 100) return <span style={{color: 'var(--color-emerald-base)'}}>PERFECT! 🎯</span>;
-    if (absDiff <= targetMs * 0.15) return <span style={{color: 'var(--color-emerald-base)'}}>Good Timing! ✅</span>;
-    if (diff < 0) return <span style={{color: 'var(--color-amber)'}}>Too Early... ⏳</span>;
-    return <span style={{color: 'var(--color-error-coral)'}}>Too Late... 🐢</span>;
-  };
+  if (!isActive) return null;
+
+  const feedback=phase==='result'&&resultMs!=null?
+    Math.abs(resultMs-targetMs)<=100?{t:'PERFECT! 🎯',c:'var(--color-emerald-base)'}:
+    Math.abs(resultMs-targetMs)<=targetMs*0.15?{t:'Close! ✅',c:'var(--color-emerald-base)'}:
+    resultMs<targetMs?{t:'Too short ⏳',c:'#eab308'}:{t:'Too long 🐢',c:'var(--color-error-coral)'}
+  :null;
 
   return (
-    <div className="active-game-container">
-      <div className="game-instructions text-highlight" style={{ textAlign: 'center', marginBottom: '20px' }}>
-        Estimate exactly <strong>{(targetMs / 1000).toFixed(1)} Seconds</strong>
-      </div>
+    <div className="active-game-container" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,padding:16,gap:16}}>
+      <p style={{opacity:0.6,fontSize:'0.88rem',margin:0}}>
+        Hold for exactly <strong>{(targetMs/1000).toFixed(1)}s</strong>
+        <span style={{opacity:0.4,marginLeft:8,fontSize:'0.8rem'}}>Round {round}/{totalRounds}</span>
+      </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px' }}>
-        
-        {/* Giant Hold Button */}
-        <button 
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={state === "holding" ? handlePointerUp : undefined}
-          style={{
-            width: '240px',
-            height: '240px',
-            borderRadius: '50%',
-            background: state === "holding" ? 'var(--color-accent-gold)' : 'var(--bg)',
-            border: state === "holding" ? 'none' : '4px solid var(--border)',
-            color: state === "holding" ? '#000' : 'var(--text-main)',
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            cursor: state === "ready" ? 'pointer' : 'default',
-            transition: 'all 0.1s ease',
-            boxShadow: state === "holding" ? '0 0 50px rgba(234, 179, 8, 0.4)' : 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            userSelect: 'none',
-            touchAction: 'none' // Crucial for mobile pointer events
-          }}
-        >
-          {state === "ready" && "HOLD"}
-          {state === "holding" && "..."}
-          {state === "result" && (resultTime / 1000).toFixed(2) + "s"}
-        </button>
+      <button
+        onPointerDown={handleDown}
+        onPointerUp={handleUp}
+        onPointerLeave={phase==='holding'?handleUp:undefined}
+        style={{
+          width:'min(220px,56vw)',height:'min(220px,56vw)',
+          borderRadius:'50%',
+          background:phase==='holding'?'var(--color-accent-gold, #eab308)':phase==='result'?'transparent':'rgba(255,255,255,0.04)',
+          border:`3px solid ${phase==='holding'?'var(--color-accent-gold, #eab308)':phase==='result'?(feedback?.c||'var(--border)'):'var(--border)'}`,
+          cursor:phase==='ready'?'pointer':'default',
+          transition:'all 0.12s',
+          boxShadow:phase==='holding'?'0 0 50px rgba(234,179,8,0.4)':'none',
+          display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+          userSelect:'none',touchAction:'none',color:'var(--text-main)',
+        }}
+      >
+        {phase==='ready'&&<><span style={{fontSize:'2.5rem'}}>⏱</span><span style={{fontSize:'0.9rem',fontWeight:700,marginTop:4}}>HOLD</span></>}
+        {phase==='holding'&&<span style={{fontSize:'3rem'}}>…</span>}
+        {phase==='result'&&<>
+          <span style={{fontSize:'1.8rem',fontWeight:900,color:feedback?.c}}>{(resultMs/1000).toFixed(2)}s</span>
+          <span style={{fontSize:'0.9rem',color:feedback?.c,marginTop:6}}>{feedback?.t}</span>
+        </>}
+      </button>
 
-        <div style={{ height: '40px', marginTop: '32px', fontSize: '1.5rem', fontWeight: 'bold' }}>
-          {state === "result" && getResultFeedback()}
-        </div>
-      </div>
-
-      <div className="action-buttons-group" style={{marginTop: '20px'}}>
-        <button className="btn-secondary" onClick={onQuit}>Quit to Gym</button>
-      </div>
+      {maxRef.current>=2&&<div style={{color:'var(--color-emerald-base)',fontWeight:700,fontSize:'0.82rem'}}>🔥 {maxRef.current} streak</div>}
     </div>
   );
 }
