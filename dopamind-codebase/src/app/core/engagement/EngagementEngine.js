@@ -161,12 +161,19 @@ export async function processGameCompletion(gameId, stats, profile, userId, hist
 async function checkAndAwardBadges(stats, profile, userId) {
   const newBadges = [];
 
-  // Fetch already-earned badge IDs
-  const { data: earned } = await supabase
-    .from('achievements')
-    .select('badge_id')
-    .eq('user_id', userId);
-  const earnedIds = new Set((earned || []).map(e => e.badge_id));
+  let earnedIds = new Set();
+  try {
+    const { data: earned, error } = await supabase
+      .from('achievements')
+      .select('badge_id')
+      .eq('user_id', userId);
+    
+    if (!error && earned) {
+      earnedIds = new Set(earned.map(e => e.badge_id));
+    }
+  } catch (e) {
+    console.warn('[EngagementEngine] Failed to fetch earned badges:', e);
+  }
 
   for (const badge of BADGES) {
     if (earnedIds.has(badge.id)) continue;

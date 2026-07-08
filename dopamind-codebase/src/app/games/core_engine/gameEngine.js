@@ -31,7 +31,8 @@ export async function logGameSession(gameId, stats, session, profile, onProfileU
   const userId  = session.user.id;
   const gameInfo = getGame(gameId);
   const today   = new Date().toISOString().split('T')[0];
-  const isFirstGameToday = profile.last_played_at !== today;
+  const lastPlayedDate = profile.last_played_at ? profile.last_played_at.split('T')[0] : null;
+  const isFirstGameToday = lastPlayedDate !== today;
 
   // ── 1. Compute personal best flag ─────────────────────────
   let isPersonalBest = false;

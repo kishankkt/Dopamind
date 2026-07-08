@@ -243,10 +243,12 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     setCustomConfirmOpen(true);
   };
 
+  const [totalTimePlayed, setTotalTimePlayed] = useState(0);
+
   const startSpecificGame = async (gameId) => {
     setActiveGameId(gameId);
     setEngagementResult(null);
-    // Load this game's adaptive level from cache or DB
+    // Load this game's adaptive level and total time from cache or DB
     if (allGameLevels[gameId] !== undefined) {
       setCurrentLevel(allGameLevels[gameId]);
     } else if (session?.user && !session.user.isTrial) {
@@ -264,6 +266,22 @@ export default function AppShell({ defaultTab = "dashboard" }) {
     } else {
       setCurrentLevel(1);
     }
+    
+    // Fetch total time played
+    if (session?.user && !session.user.isTrial) {
+      try {
+        const { data } = await supabase
+          .from('game_history')
+          .select('duration_seconds')
+          .eq('user_id', session.user.id)
+          .eq('game_id', gameId);
+        const secs = data ? data.reduce((acc, row) => acc + (row.duration_seconds || 0), 0) : 0;
+        setTotalTimePlayed(secs);
+      } catch { setTotalTimePlayed(0); }
+    } else {
+      setTotalTimePlayed(0);
+    }
+
     setGameState('playing');
     setActiveTab('games');
   };
@@ -328,7 +346,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
           key={activeGameId}
           gameId={activeGameId}
           currentLevel={currentLevel}
-          gamesPlayed={0}
+          totalTimePlayed={totalTimePlayed}
           onGameComplete={handleGameComplete}
           onExitToGym={() => setGameState('inactive')}
           onGrow={handleGrow}

@@ -85,6 +85,7 @@ export default function PreGameCountdown({
     clickCooldownMs: 300,
     cardTimeLimitMs: 3000
   });
+  const [showSettings, setShowSettings] = useState(false);
   const color = CAT_COLOR[gameInfo?.category] || '#10b981';
   const messages = FOCUS_MESSAGES[gameInfo?.category] || ['Focus. Breathe. Begin.'];
   const message = useRef(messages[Math.floor(Math.random() * messages.length)]).current;
@@ -164,106 +165,89 @@ export default function PreGameCountdown({
               {gameInfo?.cognitiveTarget}
             </p>
 
-            {/* Level */}
+            {/* Advanced Settings Accordion */}
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'var(--border-subtle)', borderRadius: 16,
-              padding: '8px 20px', margin: '16px 0',
+              margin: '24px 0',
+              background: 'var(--border-subtle)',
+              borderRadius: 16,
+              overflow: 'hidden',
+              border: `1px solid var(--border-subtle)`
             }}>
-              <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>Your Level</span>
-              <span style={{ fontWeight: 900, fontSize: '1.2rem', color }}>
-                {level}
-              </span>
-              <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>
-                {LEVEL_LABELS[level] || ''}
-              </span>
-            </div>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                style={{
+                  width: '100%', padding: '16px 20px', display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', background: 'transparent', border: 'none',
+                  color: 'var(--text-main)', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer'
+                }}
+              >
+                <span>⚙️ Game Settings</span>
+                <span style={{ transform: showSettings ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.6 }}>▼</span>
+              </button>
 
-            {/* Motivational message */}
-            <p style={{
-              margin: '0 0 28px',
-              fontSize: '1rem',
-              fontWeight: 600,
-              opacity: 0.8,
-              lineHeight: 1.5,
-              fontStyle: 'italic',
-              color: 'var(--text-main, white)',
-            }}>
-              "{message}"
-            </p>
+              {showSettings && (
+                <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 24, animation: 'preGameIn 0.2s ease' }}>
+                  
+                  {/* Focus Time */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.8, fontWeight: 600 }}>Focus Time (Minutes)</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 900, color }}>{sessionSecs === 0 ? 'Endless' : (sessionSecs / 60)}</span>
+                        <button onClick={() => setSessionSecs(sessionSecs === 0 ? 60 : 0)} style={{
+                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
+                          background: sessionSecs === 0 ? `${color}22` : 'transparent',
+                          border: `1px solid ${sessionSecs === 0 ? color : 'var(--border-subtle)'}`,
+                          color: sessionSecs === 0 ? color : 'var(--text-main)', opacity: sessionSecs === 0 ? 1 : 0.6, cursor: 'pointer'
+                        }}>Off</button>
+                      </div>
+                    </div>
+                    {sessionSecs > 0 && (
+                       <input type="range" min="60" max="1200" step="60" value={sessionSecs} onChange={e => setSessionSecs(Number(e.target.value))} style={{ width: '100%', accentColor: color, height: 4 }} />
+                    )}
+                  </div>
 
-            {/* Time selector */}
-            <div style={{ marginBottom: 28 }}>
-              <p style={{ fontSize: '0.8rem', opacity: 0.55, marginBottom: 10 }}>
-                {canControlTime ? 'Set your focus time:' : `Focus time: ${Math.round(sessionSecs / 60)} min (unlocks after 3 plays)`}
-              </p>
-              {canControlTime ? (
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  {PRESET_TIMES.map(t => (
-                    <button
-                      key={t.secs}
-                      onClick={() => setSessionSecs(t.secs)}
-                      style={{
-                        padding: '8px 14px', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem',
-                        border: `1.5px solid ${sessionSecs === t.secs ? color : 'var(--border-subtle)'}`,
-                        background: sessionSecs === t.secs ? `${color}22` : 'transparent',
-                        color: sessionSecs === t.secs ? color : 'var(--text-main)', opacity: sessionSecs === t.secs ? 1 : 0.6,
-                        cursor: 'pointer', transition: 'all 0.15s',
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  background: `${color}11`, borderRadius: 12, padding: '8px 20px',
-                  fontSize: '1.1rem', fontWeight: 800, color,
-                  display: 'inline-block',
-                }}>
-                  {Math.round(sessionSecs / 60)} min session
+                  {/* Click Cooldown */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.8, fontWeight: 600 }}>Click Cooldown</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 900, color }}>{gameConfig.clickCooldownMs === 0 ? 'Instant' : (gameConfig.clickCooldownMs/1000).toFixed(1) + 's'}</span>
+                        <button onClick={() => setGameConfig({...gameConfig, clickCooldownMs: gameConfig.clickCooldownMs === 0 ? 300 : 0})} style={{
+                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
+                          background: gameConfig.clickCooldownMs === 0 ? `${color}22` : 'transparent',
+                          border: `1px solid ${gameConfig.clickCooldownMs === 0 ? color : 'var(--border-subtle)'}`,
+                          color: gameConfig.clickCooldownMs === 0 ? color : 'var(--text-main)', opacity: gameConfig.clickCooldownMs === 0 ? 1 : 0.6, cursor: 'pointer'
+                        }}>Off</button>
+                      </div>
+                    </div>
+                    {gameConfig.clickCooldownMs > 0 && (
+                      <input type="range" min="100" max="2000" step="100" value={gameConfig.clickCooldownMs} onChange={e => setGameConfig({...gameConfig, clickCooldownMs: Number(e.target.value)})} style={{ width: '100%', accentColor: color, height: 4 }} />
+                    )}
+                  </div>
+
+                  {/* Card Time Limit */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.8, fontWeight: 600 }}>Card Time Limit</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 900, color }}>{gameConfig.cardTimeLimitMs === 0 ? 'No Limit' : (gameConfig.cardTimeLimitMs/1000).toFixed(1) + 's'}</span>
+                        <button onClick={() => setGameConfig({...gameConfig, cardTimeLimitMs: gameConfig.cardTimeLimitMs === 0 ? 3000 : 0})} style={{
+                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
+                          background: gameConfig.cardTimeLimitMs === 0 ? `${color}22` : 'transparent',
+                          border: `1px solid ${gameConfig.cardTimeLimitMs === 0 ? color : 'var(--border-subtle)'}`,
+                          color: gameConfig.cardTimeLimitMs === 0 ? color : 'var(--text-main)', opacity: gameConfig.cardTimeLimitMs === 0 ? 1 : 0.6, cursor: 'pointer'
+                        }}>Off</button>
+                      </div>
+                    </div>
+                    {gameConfig.cardTimeLimitMs > 0 && (
+                      <input type="range" min="1000" max="10000" step="500" value={gameConfig.cardTimeLimitMs} onChange={e => setGameConfig({...gameConfig, cardTimeLimitMs: Number(e.target.value)})} style={{ width: '100%', accentColor: color, height: 4 }} />
+                    )}
+                  </div>
+                  
                 </div>
               )}
             </div>
-
-            {/* SpeedMatch Minimal Config */}
-            {gameInfo?.id === 'speedmatch' && (
-              <div style={{ marginBottom: 24, background: 'var(--border-subtle)', borderRadius: 16, border: `1px solid var(--border-subtle)`, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 600 }}>Click Cooldown</span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {[0, 300, 1000].map(m => (
-                        <button key={m} onClick={() => setGameConfig({...gameConfig, clickCooldownMs: m})} style={{
-                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
-                          background: gameConfig.clickCooldownMs === m ? `${color}22` : 'transparent',
-                          border: `1px solid ${gameConfig.clickCooldownMs === m ? color : 'var(--border-subtle)'}`,
-                          color: gameConfig.clickCooldownMs === m ? color : 'var(--text-main)', opacity: gameConfig.clickCooldownMs === m ? 1 : 0.6, cursor: 'pointer'
-                        }}>{m === 0 ? 'Off' : m === 300 ? 'Default' : 'Custom'}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
-                    <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 600 }}>Card Time Limit</span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {[0, 3000, 5000].map(m => (
-                        <button key={m} onClick={() => setGameConfig({...gameConfig, cardTimeLimitMs: m})} style={{
-                          padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
-                          background: gameConfig.cardTimeLimitMs === m ? `${color}22` : 'transparent',
-                          border: `1px solid ${gameConfig.cardTimeLimitMs === m ? color : 'var(--border-subtle)'}`,
-                          color: gameConfig.cardTimeLimitMs === m ? color : 'var(--text-main)', opacity: gameConfig.cardTimeLimitMs === m ? 1 : 0.6, cursor: 'pointer'
-                        }}>{m === 0 ? 'Off' : m === 3000 ? 'Default' : 'Custom'}</button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tagline */}
-            <p style={{ fontSize: '0.8rem', opacity: 0.4, marginBottom: 20 }}>
-              Processing Speed · Focus
-            </p>
 
             {/* Buttons */}
             <div style={{ display: 'flex', gap: 12 }}>
