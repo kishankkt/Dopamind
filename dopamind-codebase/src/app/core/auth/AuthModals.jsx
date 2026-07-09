@@ -9,10 +9,47 @@ export default function AuthModals({
 }) {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [authFullName, setAuthFullName] = useState("");
+  const [authUsername, setAuthUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState(null);
   const [authMode, setAuthMode] = useState("login");
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authSuccessMessage, setAuthSuccessMessage] = useState("");
+
+  // Check username availability
+  React.useEffect(() => {
+    if (authMode !== 'signup' || !authUsername) {
+      setUsernameStatus(null);
+      return;
+    }
+
+    const checkUsername = async () => {
+      setUsernameStatus('checking');
+      if (!/^[a-zA-Z0-9_]+$/.test(authUsername)) {
+        setUsernameStatus('invalid');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', authUsername)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        setUsernameStatus('available');
+      } else if (data) {
+        setUsernameStatus('taken');
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      checkUsername();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [authUsername, authMode]);
 
   if (!authOpen) return null;
 
@@ -29,14 +66,18 @@ export default function AuthModals({
         });
         if (error) throw error;
         setAuthOpen(false);
-        window.location.href = '/dashboard';
+        if (!isDesktop) window.location.href = '/dashboard';
       } else {
+        if (usernameStatus !== 'available') {
+          throw new Error("Please choose a valid and available username.");
+        }
         const { data, error } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
           options: {
             data: {
-              username: authEmail.split('@')[0]
+              full_name: authFullName,
+              username: authUsername
             }
           }
         });
@@ -98,6 +139,35 @@ export default function AuthModals({
         ) : (
           <>
             <form onSubmit={handleAuthSubmit} className="auth-form">
+              {authMode === "signup" && (
+                <>
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="John Doe"
+                    value={authFullName}
+                    onChange={(e) => setAuthFullName(e.target.value)}
+                  />
+
+                  <label>
+                    Username
+                    {usernameStatus === 'available' && <span style={{ color: 'var(--color-emerald-base)', fontSize: '0.8rem', marginLeft: '8px' }}>Available ✅</span>}
+                    {usernameStatus === 'taken' && <span style={{ color: 'red', fontSize: '0.8rem', marginLeft: '8px' }}>Taken ❌</span>}
+                    {usernameStatus === 'checking' && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '8px' }}>Checking...</span>}
+                    {usernameStatus === 'invalid' && <span style={{ color: 'red', fontSize: '0.8rem', marginLeft: '8px' }}>Letters/numbers/_ only</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="johndoe123"
+                    value={authUsername}
+                    onChange={(e) => setAuthUsername(e.target.value.toLowerCase())}
+                    style={{ borderColor: usernameStatus === 'taken' ? 'red' : usernameStatus === 'available' ? 'var(--color-emerald-base)' : 'inherit' }}
+                  />
+                </>
+              )}
+
               <label>Email Address</label>
               <input 
                 type="email" 
@@ -118,7 +188,11 @@ export default function AuthModals({
 
               {authError && <p className="auth-error-msg">⚠️ {authError}</p>}
 
-              <button type="submit" className="btn-primary auth-submit-btn" disabled={authLoading}>
+              <button 
+                type="submit" 
+                className="btn-primary auth-submit-btn" 
+                disabled={authLoading || (authMode === 'signup' && usernameStatus !== 'available')}
+              >
                 {authLoading ? "Processing..." : authMode === "login" ? "Sign In" : "Sign Up"}
               </button>
             </form>

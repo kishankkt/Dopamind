@@ -17,7 +17,8 @@ if (window.__TAURI_INTERNALS__) {
             const refresh_token = params.get('refresh_token');
             if (access_token && refresh_token) {
               await supabase.auth.setSession({ access_token, refresh_token });
-              window.location.href = '/dashboard';
+              // Do NOT reload the page here. AppShell.jsx's onAuthStateChange 
+              // will automatically detect the session and gracefully redirect via React Router!
             }
           }
         }

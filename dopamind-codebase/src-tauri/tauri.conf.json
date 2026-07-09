@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "DopaMind",
-  "version": "0.1.2",
+  "version": "0.1.6",
   "identifier": "com.dopamind.app",
   "build": {
     "frontendDist": "../dist",
@@ -18,7 +18,7 @@
         "https://raw.githubusercontent.com/kishankkt/Dopamind/main/release.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE3MUI1ODYxMkFDRkZCQUMKUldTcys4OHFZVmdicHcyNEZ4ZGVkNE0zZHFUaHFVRThSUndPbkRmeDNpVEg4dE9vT3UvOWtYc0UK",
-      "dialog": true
+      "dialog": false
     }
   },
   "app": {
@@ -38,6 +38,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": {
+      "target/release/WebView2Loader.dll": "WebView2Loader.dll"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

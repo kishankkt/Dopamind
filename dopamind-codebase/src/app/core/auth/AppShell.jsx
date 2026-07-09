@@ -7,6 +7,7 @@ import LogoIcon from '@/shared/ui/LogoIcon';
 
 import AuthModals from './AuthModals';
 import SidebarNavigation from '../ui/SidebarNavigation';
+import AutoUpdater from '../ui/AutoUpdater';
 import DashboardView from '@/app/features/performance/DashboardView';
 import BrainGymView from '@/app/features/ai_spotting/BrainGymView';
 import SettingsView from '@/app/core/user/SettingsView';
@@ -448,6 +449,7 @@ export default function AppShell({ defaultTab = "dashboard" }) {
 
   return (
     <div className="app-container" style={{ position: 'relative' }}>
+      <AutoUpdater />
       {/* 🌿 Global Nature Glass Background Layer + Giant Leaves */}
       <div style={{ 
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden',

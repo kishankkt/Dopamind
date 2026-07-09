@@ -4,6 +4,7 @@ import { LayoutDashboard, Gamepad2, Settings, BrainCircuit, LayoutList } from 'l
 import { BrandConfig } from '@/config/brand';
 import LogoIcon from '@/shared/ui/LogoIcon';
 import { supabase } from '@/supabaseClient';
+import { getVersion } from '@tauri-apps/api/app';
 
 export default function SidebarNavigation({ 
   session, 
@@ -21,6 +22,13 @@ export default function SidebarNavigation({
   setDarkMode
 }) {
   const navigate = useNavigate();
+  const [appVersion, setAppVersion] = React.useState('');
+
+  React.useEffect(() => {
+    if (window.__TAURI_INTERNALS__) {
+      getVersion().then(v => setAppVersion(v)).catch(console.error);
+    }
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -114,6 +122,12 @@ export default function SidebarNavigation({
             </button>
           )}
         </div>
+        
+        {appVersion && (
+          <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            v{appVersion}
+          </div>
+        )}
       </div>
     </aside>
   );
