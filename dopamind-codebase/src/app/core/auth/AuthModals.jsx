@@ -60,17 +60,8 @@ export default function AuthModals({
     try {
       if (isDesktop) {
         const { open } = await import('@tauri-apps/plugin-shell');
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'dopamind://auth',
-            skipBrowserRedirect: true
-          }
-        });
-        if (error) throw error;
-        if (data?.url) {
-          await open(data.url);
-        }
+        // Open the Web-to-Desktop Bridge directly
+        await open('https://dopamind-silk.vercel.app/desktop-auth');
       } else {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',

@@ -41,6 +41,7 @@ import ChangelogPage from '@/website/pages/ChangelogPage';
 import ContactPage from '@/website/pages/ContactPage';
 import DocsPage from '@/website/pages/DocsPage';
 import PricingPage from '@/website/pages/PricingPage';
+import DesktopAuthPage from '@/website/pages/DesktopAuthPage';
 
 import AppShell from './app/core/auth/AppShell';
 
@@ -106,6 +107,7 @@ export default function Router() {
         {/* Redirects */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
         <Route path="/desktop-login" element={<AppShell defaultTab="dashboard" />} />
+        <Route path="/desktop-auth" element={<DesktopAuthPage />} />
         
         {/* Username Routing (placed at bottom to prevent colliding with static paths) */}
         <Route path="/:username/dashboard" element={<ProtectedRoute><AppShell defaultTab="dashboard" /></ProtectedRoute>} />

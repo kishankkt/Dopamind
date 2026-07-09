@@ -12,6 +12,13 @@
   "plugins": {
     "deep-link": {
       "schemes": ["dopamind"]
+    },
+    "updater": {
+      "endpoints": [
+        "https://raw.githubusercontent.com/kishankkt/Dopamind/main/release.json"
+      ],
+      "pubkey": "YOUR_UPDATER_PUBLIC_KEY_HERE",
+      "dialog": true
     }
   },
   "app": {
