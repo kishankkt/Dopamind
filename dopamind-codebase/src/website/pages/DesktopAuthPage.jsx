@@ -35,13 +35,7 @@ export default function DesktopAuthPage() {
     }
   };
 
-  const handleOpenApp = () => {
-    if (session?.access_token && session?.refresh_token) {
-      // Trigger the deep link to the desktop app
-      const deepLink = `dopamind://auth#access_token=${session.access_token}&refresh_token=${session.refresh_token}`;
-      window.location.href = deepLink;
-    }
-  };
+  // Standard deep link handling via <a> tag instead of window.location
 
   return (
     <PublicLayout>
@@ -66,16 +60,17 @@ export default function DesktopAuthPage() {
                 You are securely logged into your account. Click the button below to bounce back to your Desktop App.
               </p>
               
-              <button 
-                onClick={handleOpenApp}
+              <a 
+                href={`dopamind://auth#access_token=${session.access_token}&refresh_token=${session.refresh_token}`}
                 className="btn-primary"
-                style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '12px', boxShadow: '0 8px 24px rgba(16, 185, 129, 0.2)' }}
+                style={{ display: 'block', boxSizing: 'border-box', width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '12px', boxShadow: '0 8px 24px rgba(16, 185, 129, 0.2)', textDecoration: 'none' }}
               >
                 Open DopaMind Desktop
-              </button>
+              </a>
 
               <p style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '20px' }}>
-                If you see a browser prompt asking to open "DopaMind", please click Allow.
+                If you see a browser prompt asking to open "DopaMind", please click Allow.<br/><br/>
+                (If nothing happens, ensure the Desktop app is installed correctly on your device).
               </p>
             </>
           ) : (
