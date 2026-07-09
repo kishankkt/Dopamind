@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "DopaMind",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.dopamind.app",
   "build": {
     "frontendDist": "../dist",
@@ -17,7 +17,7 @@
       "endpoints": [
         "https://raw.githubusercontent.com/kishankkt/Dopamind/main/release.json"
       ],
-      "pubkey": "YOUR_UPDATER_PUBLIC_KEY_HERE",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE3MUI1ODYxMkFDRkZCQUMKUldTcys4OHFZVmdicHcyNEZ4ZGVkNE0zZHFUaHFVRThSUndPbkRmeDNpVEg4dE9vT3UvOWtYc0UK",
       "dialog": true
     }
   },

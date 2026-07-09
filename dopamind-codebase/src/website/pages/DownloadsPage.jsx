@@ -18,24 +18,24 @@ const Icons = {
 
 const BASE_DL = '/downloads'; // served from public/downloads/
 
-const OS_DATA = {
+const OS_DATA = (version) => ({
   windows: {
     name: 'Windows', icon: <Icons.Windows />, archs: [
-      { id: 'x64_exe', label: 'Windows x64 (.exe)', file: 'DopaMind_0.1.0_x64_en-US.msi' },
-      { id: 'x64_msi', label: 'Windows x64 (.msi)', file: 'DopaMind_0.1.0_x64_en-US.msi' },
-      { id: 'arm64',   label: 'Windows ARM64 (.msi)', file: 'DopaMind_arm64_Setup.msi', comingSoon: true },
+      { id: 'x64_exe', label: 'Windows x64 (.exe)', file: `DopaMind_${version}_x64_en-US.msi` },
+      { id: 'x64_msi', label: 'Windows x64 (.msi)', file: `DopaMind_${version}_x64_en-US.msi` },
+      { id: 'arm64',   label: 'Windows ARM64 (.msi)', file: `DopaMind_${version}_arm64_Setup.msi`, comingSoon: true },
     ]
   },
   mac: {
     name: 'macOS', icon: <Icons.Mac />, archs: [
-      { id: 'silicon', label: 'Apple Silicon (.dmg)',  file: 'DopaMind_0.1.0_aarch64.dmg' },
-      { id: 'intel',   label: 'Intel Mac (.dmg)',      file: 'DopaMind_0.1.0_x64.dmg' },
+      { id: 'silicon', label: 'Apple Silicon (.dmg)',  file: `DopaMind_${version}_aarch64.dmg` },
+      { id: 'intel',   label: 'Intel Mac (.dmg)',      file: `DopaMind_${version}_x64.dmg` },
     ]
   },
   linux: {
     name: 'Linux', icon: <Icons.Linux />, archs: [
-      { id: 'appimage', label: 'Linux x64 (.AppImage)', file: 'dopamind_0.1.0_amd64.AppImage' },
-      { id: 'deb',      label: 'Debian/Ubuntu (.deb)',  file: 'dopamind_0.1.0_amd64.deb' },
+      { id: 'appimage', label: 'Linux x64 (.AppImage)', file: `dopamind_${version}_amd64.AppImage` },
+      { id: 'deb',      label: 'Debian/Ubuntu (.deb)',  file: `dopamind_${version}_amd64.deb` },
     ]
   },
   ios: {
@@ -46,10 +46,10 @@ const OS_DATA = {
   android: {
     name: 'Android', icon: <Icons.Android />, archs: [
       { id: 'playstore', label: 'Google Play Store', comingSoon: true },
-      { id: 'apk',       label: 'Direct APK (.apk)', file: 'DopaMind_0.1.0.apk' },
+      { id: 'apk',       label: 'Direct APK (.apk)', file: `DopaMind_${version}.apk` },
     ]
   }
-};
+});
 
 const OsCard = ({ data, recommended, defaultArch }) => {
   const [selectedArch, setSelectedArch] = useState(defaultArch || data.archs[0].id);
@@ -118,8 +118,20 @@ const OsCard = ({ data, recommended, defaultArch }) => {
 export default function DownloadsPage() {
   const [os, setOs] = useState('unknown');
   const [arch, setArch] = useState('');
+  const [version, setVersion] = useState('0.1.1'); // Fallback version
 
   useEffect(() => {
+    // Fetch live version from release.json
+    fetch('https://raw.githubusercontent.com/kishankkt/Dopamind/main/release.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.version) {
+          // Remove the 'v' prefix if it exists
+          setVersion(data.version.replace(/^v/, ''));
+        }
+      })
+      .catch(err => console.error("Failed to fetch live version:", err));
+
     const ua = window.navigator.userAgent.toLowerCase();
     
     // OS Detection
@@ -135,6 +147,8 @@ export default function DownloadsPage() {
     else if (ua.includes('mac')) setArch('universal');
   }, []);
 
+  const osData = OS_DATA(version);
+
   return (
     <PublicLayout>
       <div className="page-container" style={{ maxWidth: '1000px', margin: '40px auto', padding: '40px' }}>
@@ -142,11 +156,11 @@ export default function DownloadsPage() {
         <p style={{ textAlign: 'center', marginBottom: '40px', opacity: 0.8 }}>Available across all your devices.</p>
         
         <div className="downloads-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-          <OsCard data={OS_DATA.windows} recommended={os === 'windows'} defaultArch={arch === 'arm64' ? 'arm64' : 'x64'} />
-          <OsCard data={OS_DATA.mac} recommended={os === 'mac'} defaultArch={arch === 'intel' ? 'intel' : 'universal'} />
-          <OsCard data={OS_DATA.linux} recommended={os === 'linux'} defaultArch={arch === 'arm64' ? 'arm64' : 'x64'} />
-          <OsCard data={OS_DATA.ios} recommended={os === 'ios'} defaultArch="appstore" />
-          <OsCard data={OS_DATA.android} recommended={os === 'android'} defaultArch="playstore" />
+          <OsCard data={osData.windows} recommended={os === 'windows'} defaultArch={arch === 'arm64' ? 'arm64' : 'x64'} />
+          <OsCard data={osData.mac} recommended={os === 'mac'} defaultArch={arch === 'intel' ? 'intel' : 'universal'} />
+          <OsCard data={osData.linux} recommended={os === 'linux'} defaultArch={arch === 'arm64' ? 'arm64' : 'x64'} />
+          <OsCard data={osData.ios} recommended={os === 'ios'} defaultArch="appstore" />
+          <OsCard data={osData.android} recommended={os === 'android'} defaultArch="playstore" />
         </div>
       </div>
     </PublicLayout>

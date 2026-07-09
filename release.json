@@ -1,0 +1,27 @@
+{
+  "version": "v0.1.1",
+  "notes": "Minor bug fixes and improvements",
+  "pub_date": "2026-07-09T00:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "YOUR_SIG_HERE",
+      "url": "https://github.com/kishankkt/Dopamind/releases/download/v0.1.1/DopaMind_0.1.1_x64_en-US.msi.zip"
+    },
+    "windows-aarch64": {
+      "signature": "YOUR_SIG_HERE",
+      "url": "https://github.com/kishankkt/Dopamind/releases/download/v0.1.1/DopaMind_0.1.1_aarch64_en-US.msi.zip"
+    },
+    "darwin-x86_64": {
+      "signature": "YOUR_SIG_HERE",
+      "url": "https://github.com/kishankkt/Dopamind/releases/download/v0.1.1/DopaMind_0.1.1_x64.app.tar.gz"
+    },
+    "darwin-aarch64": {
+      "signature": "YOUR_SIG_HERE",
+      "url": "https://github.com/kishankkt/Dopamind/releases/download/v0.1.1/DopaMind_0.1.1_aarch64.app.tar.gz"
+    },
+    "linux-x86_64": {
+      "signature": "YOUR_SIG_HERE",
+      "url": "https://github.com/kishankkt/Dopamind/releases/download/v0.1.1/dopamind_0.1.1_amd64.AppImage.tar.gz"
+    }
+  }
+}
