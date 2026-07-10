@@ -1,7 +1,7 @@
 {
-  "version": "v0.1.14",
+  "version": "v0.1.15",
   "notes": "Automatic update from GitHub Actions",
-  "pub_date": "2026-07-10T13:44:11.812Z",
+  "pub_date": "2026-07-10T14:31:22.035Z",
   "platforms": {
     "windows-x86_64": {
       "signature": "YOUR_SIG_HERE",
