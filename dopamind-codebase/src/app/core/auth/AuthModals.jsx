@@ -122,7 +122,7 @@ export default function AuthModals({
     <div className="auth-modal-overlay" onClick={() => setAuthOpen(false)}>
       <div className="auth-modal glass-panel" onClick={(e) => e.stopPropagation()}>
         <button className="auth-close-btn" onClick={() => setAuthOpen(false)}>×</button>
-        <h2>{authSuccessMessage ? "Account Created" : authMode === "login" ? "Welcome to DopaMind" : "Create Account"}</h2>
+        <h2>{authSuccessMessage ? "Account Created" : authMode === "login" ? "Welcome to DopaMind (v0.1.14)" : "Create Account (v0.1.14)"}</h2>
         <p className="auth-sub">{authSuccessMessage ? "Verification email dispatched" : "Keep your streak watered in the database"}</p>
 
         {authSuccessMessage ? (
