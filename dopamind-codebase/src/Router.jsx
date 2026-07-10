@@ -25,7 +25,7 @@
 // INSTALL: npm install react-router-dom
 
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from '@/supabaseClient';
 import ProtectedRoute from './app/core/auth/ProtectedRoute';
 import InteractiveLeaf from '@/app/games/library/InteractiveLeaf';
@@ -46,6 +46,7 @@ import DesktopAuthPage from '@/website/pages/DesktopAuthPage';
 import AppShell from './app/core/auth/AppShell';
 
 const isDesktop = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+const RouterComponent = isDesktop ? HashRouter : BrowserRouter;
 
 function DashboardRedirect() {
   const [username, setUsername] = useState(null);
@@ -77,7 +78,7 @@ function DashboardRedirect() {
 
 export default function Router() {
   return (
-    <BrowserRouter>
+    <RouterComponent>
       {/* 🌿 Global AI Chatbot and Theme Toggle */}
       <InteractiveLeaf />
 
@@ -122,6 +123,6 @@ export default function Router() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </RouterComponent>
   );
 }
