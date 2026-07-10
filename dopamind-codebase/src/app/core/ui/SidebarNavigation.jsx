@@ -5,6 +5,8 @@ import { BrandConfig } from '@/config/brand';
 import LogoIcon from '@/shared/ui/LogoIcon';
 import { supabase } from '@/supabaseClient';
 import { getVersion } from '@tauri-apps/api/app';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 export default function SidebarNavigation({ 
   session, 
@@ -23,12 +25,50 @@ export default function SidebarNavigation({
 }) {
   const navigate = useNavigate();
   const [appVersion, setAppVersion] = React.useState('');
+  const [updateInfo, setUpdateInfo] = React.useState(null);
+  const [updateStatus, setUpdateStatus] = React.useState('idle');
+  const [downloadProgress, setDownloadProgress] = React.useState({ downloaded: 0, total: 0 });
 
   React.useEffect(() => {
     if (window.__TAURI_INTERNALS__) {
       getVersion().then(v => setAppVersion(v)).catch(console.error);
+      check().then(update => {
+        if (update) setUpdateInfo(update);
+      }).catch(console.error);
     }
   }, []);
+
+  const handleUpdate = async () => {
+    if (!updateInfo) return;
+    setUpdateStatus('downloading');
+    let dl = 0;
+    let tot = 0;
+    try {
+      await updateInfo.downloadAndInstall((event) => {
+        if (event.event === 'Started') {
+          tot = event.data.contentLength || 0;
+          setDownloadProgress({ downloaded: 0, total: tot });
+        } else if (event.event === 'Progress') {
+          dl += event.data.chunkLength;
+          setDownloadProgress({ downloaded: dl, total: tot });
+        } else if (event.event === 'Finished') {
+          setUpdateStatus('downloaded');
+        }
+      });
+      if (gameState !== 'playing') {
+        await relaunch();
+      }
+    } catch (e) {
+      console.error(e);
+      setUpdateStatus('error');
+    }
+  };
+
+  React.useEffect(() => {
+    if (updateStatus === 'downloaded' && gameState !== 'playing') {
+      if (window.__TAURI_INTERNALS__) relaunch();
+    }
+  }, [updateStatus, gameState]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -126,6 +166,36 @@ export default function SidebarNavigation({
         {appVersion && (
           <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             v{appVersion}
+            
+            {updateInfo && updateStatus === 'idle' && (
+              <button onClick={handleUpdate} className="btn-primary" style={{ display: 'block', width: '100%', marginTop: '12px', padding: '8px', fontSize: '0.8rem', borderRadius: '8px' }}>
+                Update to v{updateInfo.version}
+              </button>
+            )}
+            
+            {updateStatus === 'downloading' && (
+              <div style={{ marginTop: '12px', textAlign: 'left' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-emerald-base)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Downloading update...</span>
+                  <span>{downloadProgress.total ? Math.round((downloadProgress.downloaded / downloadProgress.total) * 100) : 0}%</span>
+                </div>
+                <div style={{ width: '100%', height: '4px', background: 'var(--color-oat)', borderRadius: '4px' }}>
+                  <div style={{ width: `${downloadProgress.total ? Math.round((downloadProgress.downloaded / downloadProgress.total) * 100) : 0}%`, height: '100%', background: 'var(--color-emerald-base)', borderRadius: '4px', transition: 'width 0.2s' }}></div>
+                </div>
+              </div>
+            )}
+            
+            {updateStatus === 'downloaded' && (
+              <div style={{ marginTop: '12px', color: 'var(--color-emerald-base)', fontWeight: 'bold' }}>
+                Ready to install.<br/>{gameState === 'playing' ? "Will restart after your game." : "Restarting..."}
+              </div>
+            )}
+            
+            {updateStatus === 'error' && (
+              <div style={{ marginTop: '12px', color: 'var(--color-error-coral)' }}>
+                Update failed. <button onClick={handleUpdate} style={{ background: 'none', border: 'none', color: 'var(--color-emerald-base)', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Retry</button>
+              </div>
+            )}
           </div>
         )}
       </div>
