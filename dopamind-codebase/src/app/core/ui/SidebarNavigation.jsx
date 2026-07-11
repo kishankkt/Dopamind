@@ -29,12 +29,32 @@ export default function SidebarNavigation({
   const [updateStatus, setUpdateStatus] = React.useState('idle');
   const [downloadProgress, setDownloadProgress] = React.useState({ downloaded: 0, total: 0 });
 
+  const [isChecking, setIsChecking] = React.useState(false);
+  const [checkError, setCheckError] = React.useState('');
+
+  const doCheck = async (manual = false) => {
+    if (!window.__TAURI_INTERNALS__) return;
+    setIsChecking(true);
+    setCheckError('');
+    try {
+      const update = await check();
+      if (update) {
+        setUpdateInfo(update);
+      } else if (manual) {
+        setCheckError('App is up to date.');
+      }
+    } catch (e) {
+      console.error(e);
+      setCheckError(String(e.message || e));
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
   React.useEffect(() => {
     if (window.__TAURI_INTERNALS__) {
       getVersion().then(v => setAppVersion(v)).catch(console.error);
-      check().then(update => {
-        if (update) setUpdateInfo(update);
-      }).catch(console.error);
+      doCheck(false);
     }
   }, []);
 
@@ -52,15 +72,17 @@ export default function SidebarNavigation({
           dl += event.data.chunkLength;
           setDownloadProgress({ downloaded: dl, total: tot });
         } else if (event.event === 'Finished') {
-          setUpdateStatus('downloaded');
+          setUpdateStatus('installing');
         }
       });
+      setUpdateStatus('downloaded');
       if (gameState !== 'playing') {
         await relaunch();
       }
     } catch (e) {
       console.error(e);
       setUpdateStatus('error');
+      setCheckError(String(e.message || e));
     }
   };
 
@@ -167,6 +189,26 @@ export default function SidebarNavigation({
           <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             v{appVersion}
             
+            {!updateInfo && (
+              <button 
+                onClick={() => doCheck(true)} 
+                disabled={isChecking}
+                style={{ 
+                  display: 'block', width: '100%', marginTop: '8px', padding: '6px', 
+                  fontSize: '0.75rem', borderRadius: '6px', background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-main)', cursor: 'pointer'
+                }}
+              >
+                {isChecking ? "Checking..." : "Check for Updates"}
+              </button>
+            )}
+
+            {checkError && (
+              <div style={{ marginTop: '8px', color: 'var(--color-error-coral)', fontSize: '0.7rem', wordBreak: 'break-word', textAlign: 'left', background: 'rgba(239, 68, 68, 0.1)', padding: '6px', borderRadius: '4px' }}>
+                {checkError}
+              </div>
+            )}
+            
             {updateInfo && updateStatus === 'idle' && (
               <button onClick={handleUpdate} className="btn-primary" style={{ display: 'block', width: '100%', marginTop: '12px', padding: '8px', fontSize: '0.8rem', borderRadius: '8px' }}>
                 Update to v{updateInfo.version}
@@ -182,6 +224,12 @@ export default function SidebarNavigation({
                 <div style={{ width: '100%', height: '4px', background: 'var(--color-oat)', borderRadius: '4px' }}>
                   <div style={{ width: `${downloadProgress.total ? Math.round((downloadProgress.downloaded / downloadProgress.total) * 100) : 0}%`, height: '100%', background: 'var(--color-emerald-base)', borderRadius: '4px', transition: 'width 0.2s' }}></div>
                 </div>
+              </div>
+            )}
+
+            {updateStatus === 'installing' && (
+              <div style={{ marginTop: '12px', color: 'var(--color-emerald-base)', fontWeight: 'bold' }}>
+                Installing update...
               </div>
             )}
             
